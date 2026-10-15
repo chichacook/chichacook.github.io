@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/jpeg" href="imagenes/ChichaCook.png">
+    <title>Registrarse</title>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+        <img src="imagenes/ChichaCook.png" alt="Logo ChichaCook">
+        <h2><span>CHICHA</span>COOK</h2>
+    </div>
+
+    <nav class="main-nav" aria-label="Navegación principal">
+        <a href="index.html">Inicio</a>
+        <a href="servicios.html">Servicios</a>
+        <a href="finanzas.html">Finanzas</a>
+        <a href="nosotros.html">Nosotros</a>
+        <a href="contacto.html">Contacto</a>
+        <a href="videojuego.html">Videojuego</a>
+    </nav>
+
+    <div class="header-actions">
+        <nav class="account-nav" aria-label="Cuenta">
+            <a href="login.html">Iniciar sesión</a>
+            <a href="registrarse.html">Registrarse</a>
+        </nav>
+        <button type="button" onclick="mostrarCarrito()" aria-label="Mostrar carrito">🛒 <b id="cantidad">0</b></button>
+    </div>
+
+</header>
+
+    <section>
+    <div class="login-container">
+    <div class="auth-welcome">
+      <p class="auth-eyebrow">SABOR VENEZOLANO</p>
+      <h1>Bienvenido a CHICHACOOK</h1>
+      <p>Crea tu cuenta y descubre una forma deliciosa de disfrutar la chicha venezolana.</p>
+    </div>
+    <form class="register-form">
+      <h2>Registrarse</h2>
+      
+      <div class="input-group">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" name="email" placeholder="Ingresa tu correo" autocomplete="email" required>
+      </div>
+
+      <div class="input-group">
+        <label for="register-username">Usuario</label>
+        <input type="text" id="register-username" name="username" placeholder="Elige un usuario" autocomplete="username" required>
+      </div>
+
+
+      <div class="input-group">
+        <label for="password">Contraseña</label>
+        <input type="password" id="register-password" name="password" placeholder="Ingresa tu contraseña" autocomplete="new-password" required>
+      </div>
+
+      <div class="input-group">
+        <label for="display-name">Nombre</label>
+        <input type="text" id="display-name" name="displayName" placeholder="Ingresa tu nombre" autocomplete="name" required>
+      </div>
+
+      <button type="submit" class="btn-submit">Crear cuenta</button>
+    </form>
+    </div>
+  </section>
+
+  <footer>
+    <p>ChichaCook - Sabor venezolano <span class="bandera-venezuela" role="img" aria-label="Bandera de Venezuela"></span></p>
+</footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

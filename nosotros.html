@@ -1,0 +1,89 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="imagenes/ChichaCook.png">
+    <title>Nosotros - ChichaCook</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <img src="imagenes/ChichaCook.png" alt="Logo ChichaCook">
+        <h2><span>CHICHA</span>COOK</h2>
+    </div>
+
+    <nav class="main-nav" aria-label="Navegación principal">
+        <a href="index.html">Inicio</a>
+        <a href="servicios.html">Servicios</a>
+        <a href="finanzas.html">Finanzas</a>
+        <a href="nosotros.html">Nosotros</a>
+        <a href="contacto.html">Contacto</a>
+        <a href="videojuego.html">Videojuego</a>
+    </nav>
+
+    <div class="header-actions">
+        <nav class="account-nav" aria-label="Cuenta">
+            <a href="login.html">Iniciar sesión</a>
+            <a href="registrarse.html">Registrarse</a>
+        </nav>
+        <button type="button" onclick="mostrarCarrito()" aria-label="Mostrar carrito">🛒 <b id="cantidad">0</b></button>
+    </div>
+</header>
+
+<section class="seccion">
+    <p class="amarillo">NUESTRO EQUIPO</p>
+    <h1>Nosotros</h1>
+
+    <p>Conoce a las personas que forman parte de ChichaCook.</p>
+
+    <div class="trabajadores">
+        <div class="trabajador">
+            <div class="foto"></div>
+            <h2>Yoneiker Blanco</h2>
+            <h3>Ceo</h3>
+            <p>Se encarga de organizar el negocio y tomar decisiones importantes.</p>
+        </div>
+
+        <div class="trabajador">
+            <div class="foto"></div>
+            <h2>Deiby Moreno</h2>
+            <h3>Dir.Contratos</h3>
+            <p>Se encarga de realizar los contratos a los trabajadores.</p>
+        </div>
+
+        <div class="trabajador">
+            <div class="foto"></div>
+            <h2>Aarón Gutierrez</h2>
+            <h3>Asistente</h3>
+            <p>Se encarga de las redes sociales y de promocionar ChichaCook.</p>
+        </div>
+
+        <div class="trabajador">
+            <div class="foto"></div>
+            <h2>Yael Amari</h2>
+            <h3>Comercial</h3>
+            <p>Se encarga de las redes sociales y de promocionar ChichaCook.</p>
+        </div>
+
+        <div class="trabajador">
+            <div class="foto"></div>
+            <h2>Sandra Haro</h2>
+            <h3>Contable</h3>
+            <p>Atiende a los clientes y recibe los pedidos.</p>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <p>ChichaCook - Sabor venezolano <span class="bandera-venezuela" role="img" aria-label="Bandera de Venezuela"></span></p>
+</footer>
+
+<div id="carrito" class="carrito"></div>
+
+<script src="js/script.js"></script>
+</body>
+</html>

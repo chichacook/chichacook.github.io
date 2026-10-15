@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="imagenes/ChichaCook.png">
+    <title>Finanzas - ChichaCook</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <img src="imagenes/ChichaCook.png" alt="Logo ChichaCook">
+        <h2><span>CHICHA</span>COOK</h2>
+    </div>
+
+    <nav class="main-nav" aria-label="Navegación principal">
+        <a href="index.html">Inicio</a>
+        <a href="servicios.html">Servicios</a>
+        <a href="finanzas.html">Finanzas</a>
+        <a href="nosotros.html">Nosotros</a>
+        <a href="contacto.html">Contacto</a>
+        <a href="videojuego.html">Videojuego</a>
+    </nav>
+
+    <div class="header-actions">
+        <nav class="account-nav" aria-label="Cuenta">
+            <a href="login.html">Iniciar sesión</a>
+            <a href="registrarse.html">Registrarse</a>
+        </nav>
+        <button type="button" onclick="mostrarCarrito()" aria-label="Mostrar carrito">🛒 <b id="cantidad">0</b></button>
+    </div>
+</header>
+
+<section class="seccion">
+    <p class="amarillo">PRECIOS</p>
+    <h1>Finanzas</h1>
+
+    <div class="tarjetas">
+        <div class="precio">
+            <h3>Chicha</h3>
+            <h2>$1.200</h2>
+        </div>
+
+        <div class="precio">
+            <h3>Topping extra</h3>
+            <h2>$200</h2>
+        </div>
+
+        <div class="precio">
+            <h3>Galleta</h3>
+            <h2>Gratis</h2>
+        </div>
+    </div>
+
+    <div class="tarjeta">
+        <h2>Ejemplo de compra</h2>
+        <p>Chicha + 2 toppings + galleta = $1.200</p>
+        <p>Chicha + 3 toppings + galleta = $1.400</p>
+    </div>
+</section>
+
+<footer>
+    <p>ChichaCook - Sabor venezolano <span class="bandera-venezuela" role="img" aria-label="Bandera de Venezuela"></span></p>
+</footer>
+
+<div id="carrito" class="carrito"></div>
+
+<script src="js/script.js"></script>
+</body>
+</html>

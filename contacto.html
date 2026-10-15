@@ -1,0 +1,76 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="imagenes/ChichaCook.png">
+    <title>Contacto - ChichaCook</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <img src="imagenes/ChichaCook.png" alt="Logo ChichaCook">
+        <h2><span>CHICHA</span>COOK</h2>
+    </div>
+
+    <nav class="main-nav" aria-label="Navegación principal">
+        <a href="index.html">Inicio</a>
+        <a href="servicios.html">Servicios</a>
+        <a href="finanzas.html">Finanzas</a>
+        <a href="nosotros.html">Nosotros</a>
+        <a href="contacto.html">Contacto</a>
+        <a href="videojuego.html">Videojuego</a>
+    </nav>
+
+    <div class="header-actions">
+        <nav class="account-nav" aria-label="Cuenta">
+            <a href="login.html">Iniciar sesión</a>
+            <a href="registrarse.html">Registrarse</a>
+        </nav>
+        <button type="button" onclick="mostrarCarrito()" aria-label="Mostrar carrito">🛒 <b id="cantidad">0</b></button>
+    </div>
+</header>
+
+<section class="seccion">
+    <p class="amarillo">CONTÁCTANOS</p>
+    <h1>Contacto</h1>
+
+    <div class="contacto">
+        <div class="tarjeta">
+            <h2>Escríbenos</h2>
+
+            <form onsubmit="enviar(event)">
+                <label>Nombre</label>
+                <input id="nombre" type="text" required>
+
+                <label>Correo</label>
+                <input type="email" required>
+
+                <label>Mensaje</label>
+                <textarea required></textarea>
+
+                <button class="boton" type="submit">Enviar</button>
+            </form>
+        </div>
+
+        <div class="tarjeta">
+            <h2>Información</h2>
+            <p>📱 WhatsApp: +56 9 0000 0000</p>
+            <p>📸 Instagram: @chichacook</p>
+            <p>📍 Chile</p>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <p>ChichaCook - Sabor venezolano <span class="bandera-venezuela" role="img" aria-label="Bandera de Venezuela"></span></p>
+</footer>
+
+<div id="carrito" class="carrito"></div>
+
+<script src="js/script.js"></script>
+</body>
+</html>
