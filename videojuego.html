@@ -21,6 +21,7 @@
         <a href="nosotros.html">Nosotros</a>
         <a href="contacto.html">Contacto</a>
         <a href="videojuego.html" aria-current="page">Videojuego</a>
+        <a href="recompensas.html">Recompensas</a>
     </nav>
 
     <div class="header-actions">
@@ -36,27 +37,94 @@
     <section class="game-welcome">
         <img src="imagenes/ChichaCook.png" alt="" class="game-logo">
         <div>
-            <p class="game-eyebrow">RETO DE SABORES</p>
-            <h1>Bienvenido a nuestro juego CHICHACOOK</h1>
-            <p>Encuentra las parejas de sabores y demuestra tu memoria.</p>
+            <p class="game-eyebrow">BLACKJACK CHICHACOOK</p>
+            <h1>¿Llegarás a 21?</h1>
+            <p>Juega contra la casa: pide cartas o plántate antes de pasarte.</p>
         </div>
     </section>
 
-    <section class="memory-section" aria-labelledby="memory-title">
-        <div class="memory-heading">
+    <section class="blackjack-section" aria-labelledby="blackjack-title">
+        <div class="blackjack-heading">
             <div>
                 <p class="game-eyebrow">MINIJUEGO</p>
-                <h2 id="memory-title">Memoria de sabores</h2>
+                <h2 id="blackjack-title">Mesa de blackjack</h2>
             </div>
-            <div class="game-stats" aria-live="polite">
-                <span>Intentos <strong id="memory-moves">0</strong></span>
-                <span>Parejas <strong id="memory-pairs">0/6</strong></span>
+            <div class="blackjack-score" aria-live="polite">
+                <span>Mis puntos <strong id="blackjack-points">0</strong></span>
+                <span>Victorias <strong id="blackjack-wins">0</strong></span>
+                <span>Derrotas <strong id="blackjack-losses">0</strong></span>
             </div>
         </div>
-        <div id="memory-board" class="memory-board" aria-label="Tablero de memoria"></div>
-        <div class="memory-footer">
-            <p id="memory-message" aria-live="polite">Voltea dos cartas para encontrar una pareja.</p>
-            <button id="memory-reset" class="boton" type="button">Mezclar de nuevo</button>
+
+        <div class="blackjack-table">
+            <section class="blackjack-hand" aria-labelledby="dealer-title">
+                <div class="hand-heading">
+                    <h3 id="dealer-title">La casa</h3>
+                    <span id="dealer-total" class="hand-total">Puntos: —</span>
+                </div>
+                <div id="dealer-cards" class="playing-cards" aria-label="Cartas de la casa"></div>
+            </section>
+
+            <section class="blackjack-hand player-hand" aria-labelledby="player-title">
+                <div class="hand-heading">
+                    <h3 id="player-title">Tu mano</h3>
+                    <span id="player-total" class="hand-total">Puntos: —</span>
+                </div>
+                <div id="player-cards" class="playing-cards" aria-label="Tus cartas"></div>
+            </section>
+        </div>
+
+        <div class="blackjack-footer">
+            <p id="blackjack-message" class="blackjack-message" role="status" aria-live="polite">Preparando la mesa...</p>
+            <div class="blackjack-actions">
+                <label class="bet-control" for="blackjack-bet">
+                    Apuesta
+                    <input id="blackjack-bet" type="number" min="1" step="1" value="100" inputmode="numeric">
+                    <span>puntos</span>
+                </label>
+                <button id="blackjack-hit" class="boton" type="button">Pedir carta</button>
+                <button id="blackjack-stand" class="boton" type="button">Plantarse</button>
+                <button id="blackjack-new" class="boton" type="button">Nueva partida</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="roulette-section" aria-labelledby="roulette-title">
+        <div class="roulette-heading">
+            <div>
+                <p class="game-eyebrow">RULETA AMERICANA</p>
+                <h2 id="roulette-title">Prueba tu suerte</h2>
+                <p>Elige un número o un color y apuesta tus puntos.</p>
+            </div>
+            <p class="roulette-balance">Mis puntos <strong id="roulette-points">0</strong></p>
+        </div>
+
+        <div class="roulette-layout">
+            <div class="roulette-table-wrap">
+                <div id="roulette-board" class="roulette-board" aria-label="Casillas de la ruleta americana"></div>
+                <div class="roulette-bet-options" role="group" aria-label="Tipo de apuesta">
+                    <button class="roulette-bet-choice is-selected" type="button" data-bet-type="number" aria-pressed="true">Número</button>
+                    <button class="roulette-bet-choice roulette-red" type="button" data-bet-type="red" aria-pressed="false">Rojo</button>
+                    <button class="roulette-bet-choice roulette-black" type="button" data-bet-type="black" aria-pressed="false">Negro</button>
+                </div>
+                <p id="roulette-selection" class="roulette-selection" aria-live="polite">Número elegido: 0</p>
+            </div>
+
+            <div class="roulette-play">
+                <div id="roulette-wheel" class="roulette-wheel" aria-hidden="true">
+                    <div class="roulette-ball-track">
+                        <span class="roulette-ball"></span>
+                    </div>
+                    <span id="roulette-result">?</span>
+                </div>
+                <label class="bet-control" for="roulette-bet">
+                    Apuesta
+                    <input id="roulette-bet" type="number" min="1" step="1" value="100" inputmode="numeric">
+                    <span>puntos</span>
+                </label>
+                <button id="roulette-spin" class="boton" type="button">Girar ruleta</button>
+                <p id="roulette-message" class="roulette-message" role="status" aria-live="polite">Selecciona tu apuesta para jugar.</p>
+            </div>
         </div>
     </section>
 </main>

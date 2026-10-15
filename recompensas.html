@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="imagenes/ChichaCook.png">
+    <link rel="stylesheet" href="css/style.css">
+    <title>Recompensas - ChichaCook</title>
+</head>
+<body>
+<header>
+    <div class="logo">
+        <img src="imagenes/ChichaCook.png" alt="Logo ChichaCook">
+        <h2><span>CHICHA</span>COOK</h2>
+    </div>
+
+    <nav class="main-nav" aria-label="Navegación principal">
+        <a href="index.html">Inicio</a>
+        <a href="servicios.html">Servicios</a>
+        <a href="finanzas.html">Finanzas</a>
+        <a href="nosotros.html">Nosotros</a>
+        <a href="contacto.html">Contacto</a>
+        <a href="videojuego.html">Videojuego</a>
+        <a href="recompensas.html" aria-current="page">Recompensas</a>
+    </nav>
+
+    <div class="header-actions">
+        <nav class="account-nav" aria-label="Cuenta">
+            <a href="login.html">Iniciar sesión</a>
+            <a href="registrarse.html">Registrarse</a>
+        </nav>
+        <button type="button" onclick="mostrarCarrito()" aria-label="Mostrar carrito">🛒 <b id="cantidad">0</b></button>
+    </div>
+</header>
+
+<main class="rewards-page">
+    <section class="rewards-welcome">
+        <p class="rewards-eyebrow">PROGRAMA DE FIDELIDAD</p>
+        <h1>¡Bienvenido a Recompensas!</h1>
+        <p>Canjea tus puntos por algo delicioso y disfruta el sabor de ChichaCook.</p>
+    </section>
+
+    <section class="reward-card" aria-labelledby="reward-title">
+        <div class="reward-icon" aria-hidden="true">🥤</div>
+        <div class="reward-details">
+            <p class="rewards-eyebrow">TU PREMIO</p>
+            <h2 id="reward-title">Una chicha gratis</h2>
+            <p>Disfruta una chicha venezolana con galleta de cortesía.</p>
+            <p class="reward-balance">Tu saldo: <strong id="reward-points">0</strong> puntos</p>
+            <p class="reward-cost">15.000 <span>puntos</span></p>
+            <button id="redeem-reward" class="boton" type="button">Canjear chicha</button>
+            <p id="redeem-message" class="redeem-message" role="status" aria-live="polite"></p>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>ChichaCook - Sabor venezolano <span class="bandera-venezuela" role="img" aria-label="Bandera de Venezuela"></span></p>
+</footer>
+
+<div id="carrito" class="carrito"></div>
+<script src="js/script.js"></script>
+</body>
+</html>
