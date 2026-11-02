@@ -5145,17 +5145,25 @@ body.cart-open {
 
 .penalty-play-area {
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(250px, .75fr);
+    grid-template-columns: minmax(0, 1.05fr) minmax(390px, .95fr);
     align-items: stretch;
     gap: 20px;
 }
 
+@media (max-width: 900px) {
+    .penalty-play-area {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .penalty-pitch {
     position: relative;
-    min-height: 430px;
+    align-self: start;
+    height: clamp(430px, 38vw, 480px);
     margin: 0;
     overflow: hidden;
     isolation: isolate;
+    box-sizing: border-box;
     background:
         radial-gradient(ellipse at 50% 7%, #fff2, transparent 46%),
         linear-gradient(180deg, #142d32 0, #20503f 56%, #287348 100%);
@@ -5187,10 +5195,7 @@ body.cart-open {
     border: 9px solid #fdfcf5;
     border-top-width: 11px;
     border-radius: 6px 6px 2px 2px;
-    box-shadow:
-        0 8px 0 #b5b7ad,
-        0 16px 26px #071a1755,
-        inset 0 0 26px #fff3;
+    box-shadow: 0 12px 26px #071a1755, inset 0 0 26px #fff3;
     transform: translateX(-50%);
     cursor: crosshair;
     touch-action: none;
@@ -5222,7 +5227,7 @@ body.cart-open {
     width: 94px;
     height: 150px;
     pointer-events: none;
-    transform: translate(-50%, -50%) rotate(var(--keeper-tilt, 0deg)) scale(var(--keeper-size, 1));
+    transform: translate(-50%, -50%) rotate(0) scale(calc(var(--keeper-size, 1) * 1.25));
     transform-origin: center 70%;
     transition: left 320ms cubic-bezier(.2,.8,.2,1), top 320ms cubic-bezier(.2,.8,.2,1), transform 320ms ease;
 }
@@ -5364,7 +5369,7 @@ body.cart-open {
 .penalty-ball {
     position: absolute;
     left: 50%;
-    top: 87%;
+    top: 94%;
     z-index: 4;
     display: block;
     width: 42px;
@@ -5378,7 +5383,7 @@ body.cart-open {
     box-shadow: 0 5px 9px #0c211a88, inset -3px -4px 5px #15251c55;
     pointer-events: none;
     transform: translate(-50%, -50%);
-    transition: left 300ms cubic-bezier(.16,.76,.35,1), top 300ms cubic-bezier(.16,.76,.35,1), transform 260ms ease;
+    transition: left 520ms cubic-bezier(.16,.76,.35,1), top 520ms cubic-bezier(.16,.76,.35,1), transform 300ms ease;
 }
 
 .ball-panel {
@@ -5428,7 +5433,7 @@ body.cart-open {
 .penalty-shooter {
     position: absolute;
     bottom: 17px;
-    left: calc(50% - 118px);
+    left: calc(50% - 104px);
     z-index: 3;
     display: block;
     width: 78px;
@@ -5642,11 +5647,95 @@ body.cart-open {
 }
 
 .penalty-shooter.is-shooting {
-    transform: rotate(-5deg) translateY(-2px);
+    animation: penalty-shooter-kick 560ms cubic-bezier(.2,.8,.2,1) both;
 }
 
 .penalty-shooter.is-shooting .shooter-leg-right {
-    transform: rotate(-48deg);
+    transform: rotate(-58deg);
+}
+
+.penalty-shooter.is-shooting .shooter-leg-left {
+    transform: rotate(17deg);
+}
+
+.penalty-pitch.is-kicking .penalty-ball {
+    animation: penalty-ball-kick 520ms ease-out both;
+}
+
+.penalty-pitch.is-kicking .penalty-spot {
+    animation: penalty-spot-flash 460ms ease-out both;
+}
+
+@keyframes penalty-shooter-kick {
+    0% { transform: translateX(0) rotate(0); }
+    28% { transform: translateX(7px) rotate(4deg); }
+    58% { transform: translateX(20px) rotate(-8deg); }
+    100% { transform: translateX(12px) rotate(-4deg); }
+}
+
+@keyframes penalty-ball-kick {
+    0% { filter: brightness(1); }
+    22% { filter: brightness(1.7); }
+    100% { filter: brightness(1); }
+}
+
+@keyframes penalty-spot-flash {
+    0%, 100% { opacity: 1; }
+    25% { opacity: .35; }
+}
+
+.penalty-direction-controls {
+    display: grid;
+    gap: 7px;
+    padding: 12px;
+    color: #4d0919;
+    background: #f7f8f2;
+    border: 1px solid #dfe4d8;
+    border-radius: 12px;
+    font-weight: 800;
+}
+
+.penalty-direction-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.penalty-direction {
+    display: grid;
+    min-height: 48px;
+    place-items: center;
+    color: #4d0919;
+    background: #fff;
+    border: 1px solid #c9d2c7;
+    border-radius: 9px;
+    font: inherit;
+    font-size: 24px;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.penalty-direction[aria-pressed="true"] {
+    color: #fff;
+    background: #176244;
+    border-color: #176244;
+    box-shadow: inset 0 0 0 2px #ffffff66;
+}
+
+.penalty-direction:focus-visible {
+    outline: 3px solid #f2c94c;
+    outline-offset: 2px;
+}
+
+.penalty-direction:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .penalty-goal {
+        cursor: default;
+    }
 }
 
 .penalty-aim-hint {
@@ -5712,7 +5801,33 @@ body.cart-open {
 }
 
 .penalty-keeper.is-diving {
-    transform: translate(-50%, -50%) rotate(var(--keeper-tilt, 0deg)) scale(calc(var(--keeper-size, 1) * 1.08));
+    transform: translate(-50%, -50%) rotate(var(--keeper-dive-angle, 90deg)) scale(calc(var(--keeper-size, 1) * 1.3));
+}
+
+@media (min-width: 701px) {
+    .penalty-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+            "shooter keeper"
+            "bet phase"
+            "bet direction"
+            "progress power"
+            "action reset";
+        align-content: start;
+    }
+
+    .penalty-shooter-picker { grid-area: shooter; }
+    .penalty-keeper-picker { grid-area: keeper; }
+    .penalty-controls > .penalty-bet-card { grid-area: bet; }
+    .penalty-controls > .penalty-phase { grid-area: phase; }
+    .penalty-controls > .penalty-direction-controls { grid-area: direction; }
+    .penalty-controls > .penalty-progress { grid-area: progress; }
+    .penalty-controls > .penalty-power { grid-area: power; }
+    .penalty-controls > #penalty-action { grid-area: action; }
+    .penalty-controls > #penalty-reset {
+        grid-area: reset;
+        width: 100%;
+    }
 }
 
 .penalty-keeper[data-keeper="neuer"] .keeper-body {
@@ -6282,7 +6397,7 @@ body.cart-open {
     }
 
     .penalty-pitch {
-        min-height: 410px;
+        height: 410px;
     }
 
     .penalty-goal {
@@ -6292,20 +6407,27 @@ body.cart-open {
     }
 
     .penalty-shooter {
-        left: calc(50% - 100px);
+        left: calc(50% - 104px);
         transform: scale(.9);
     }
 
     .penalty-shooter.is-shooting {
-        transform: scale(.9) rotate(-5deg) translateY(-2px);
+        animation-name: penalty-shooter-kick-mobile;
+    }
+
+    @keyframes penalty-shooter-kick-mobile {
+        0% { transform: scale(.9) translateX(0) rotate(0); }
+        28% { transform: scale(.9) translateX(6px) rotate(4deg); }
+        58% { transform: scale(.9) translateX(16px) rotate(-8deg); }
+        100% { transform: scale(.9) translateX(10px) rotate(-4deg); }
     }
 
     .penalty-keeper {
-        transform: translate(-50%, -50%) rotate(var(--keeper-tilt, 0deg)) scale(calc(var(--keeper-size, 1) * .82));
+        transform: translate(-50%, -50%) rotate(0) scale(calc(var(--keeper-size, 1) * 1.05));
     }
 
     .penalty-keeper.is-diving {
-        transform: translate(-50%, -50%) rotate(var(--keeper-tilt, 0deg)) scale(calc(var(--keeper-size, 1) * .9));
+        transform: translate(-50%, -50%) rotate(var(--keeper-dive-angle, 90deg)) scale(calc(var(--keeper-size, 1) * 1.12));
     }
 
     .penalty-scoreboard {
@@ -6393,7 +6515,11 @@ body.cart-open {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .penalty-keeper {
+    .penalty-keeper,
+    .penalty-ball,
+    .penalty-shooter,
+    .penalty-spot {
         transition: none;
+        animation: none !important;
     }
 }

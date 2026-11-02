@@ -222,7 +222,7 @@
             <div>
                 <p class="game-eyebrow">RETO DE PRECISIÓN</p>
                 <h2 id="penalty-title">Tanda de penales</h2>
-                <p>En cada uno de los tres turnos, patea y después intenta atajar el tiro del rival. Toca cualquier punto del arco para apuntar, carga potencia y apuesta puntos virtuales en cada acción. Si aciertas, ganas la apuesta más una bonificación; si fallas, pierdes lo apostado.</p>
+                <p>Juega tres rondas: patea una vez y luego intenta atajar. En PC elige izquierda, centro o derecha con las flechas; en celular también puedes tocar el arco. Carga potencia y apuesta puntos virtuales si quieres.</p>
             </div>
             <p class="penalty-balance">Mis puntos <strong id="penalty-points">Inicia sesión</strong></p>
         </div>
@@ -247,7 +247,7 @@
         </div>
         <div class="penalty-play-area">
             <div class="penalty-pitch" data-phase="kick">
-                <div class="penalty-goal" role="button" tabindex="0" aria-label="Toca el arco para elegir dónde patear">
+                <div class="penalty-goal" role="button" tabindex="0" aria-label="Elige la dirección con los controles de flecha">
                     <span class="goal-net"></span>
                     <span class="penalty-keeper" data-keeper="neuer">
                         <span class="keeper-head"></span>
@@ -281,7 +281,7 @@
                     <span class="shooter-boot shooter-boot-right"></span>
                 </span>
                 <span class="penalty-spot" aria-label="Punto penal"></span>
-                <span class="penalty-aim-hint">Toca el arco para apuntar</span>
+                <span class="penalty-aim-hint">← IZQUIERDA · CENTRO · DERECHA →</span>
             </div>
             <div class="penalty-controls">
                 <div class="penalty-shooter-picker">
@@ -313,6 +313,14 @@
                     <p id="penalty-bet-feedback" class="penalty-bet-feedback" role="status" aria-live="polite"></p>
                 </div>
                 <p id="penalty-phase" class="penalty-phase">Tu turno: elige dónde patear.</p>
+                <div class="penalty-direction-controls" role="group" aria-label="Dirección del tiro">
+                    <span>Elige la dirección</span>
+                    <div class="penalty-direction-buttons">
+                        <button class="penalty-direction" type="button" data-direction="left" aria-label="Apuntar a la izquierda" aria-pressed="false">←</button>
+                        <button class="penalty-direction" type="button" data-direction="center" aria-label="Apuntar al centro" aria-pressed="true">●</button>
+                        <button class="penalty-direction" type="button" data-direction="right" aria-label="Apuntar a la derecha" aria-pressed="false">→</button>
+                    </div>
+                </div>
                 <p id="penalty-progress" class="penalty-progress" role="status" aria-live="polite">
                     Inicia sesión para comenzar una tanda.
                 </p>
