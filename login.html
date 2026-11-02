@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/style.css">
-    <link rel="icon" type="image/jpeg" href="imagenes/ChichaCook.png">
+    <link rel="icon" type="image/png" href="imagenes/ChichaCook.png">
     <title>Iniciar Sesión</title>
 </head>
 <body>
 
   <header>
     <a class="logo" href="index.html" aria-label="ChichaCook, inicio">
-      <img src="imagenes/ChichaCook.png" alt="Logotipo de ChichaCook">
+      <img src="imagenes/ChichaCook.png" alt="Logotipo de ChichaCook" decoding="async">
       <span class="logo-name"><span>CHICHA</span><span class="logo-accent">COOK</span></span>
     </a>
 
@@ -32,17 +32,24 @@
         <a href="login.html">Iniciar sesión</a>
         <a href="registrarse.html">Registrarse</a>
       </nav>
-      <button type="button" onclick="mostrarCarrito()" aria-label="Mostrar carrito" aria-expanded="false">🛒 <b id="cantidad">0</b></button>
+      <button type="button" onclick="mostrarCarrito()" aria-label="Mostrar carrito" aria-expanded="false"><span class="cart-icon" aria-hidden="true">🛒</span><b id="cantidad">0</b></button>
     </div>
 
 </header>
 
+  <main>
     <section>
     <div class="login-container">
     <div class="auth-welcome">
       <p class="auth-eyebrow">SABOR VENEZOLANO</p>
       <h1>Bienvenido a CHICHACOOK</h1>
-      <p>Inicia sesión, personaliza tu chicha y disfruta un momento lleno de sabor.</p>
+      <p>Entra a tu cuenta y continúa disfrutando de todo lo que preparamos para ti.</p>
+      <ul class="auth-benefits">
+        <li><span aria-hidden="true">✓</span> Guarda tu progreso y tus puntos</li>
+        <li><span aria-hidden="true">✓</span> Personaliza tus pedidos</li>
+        <li><span aria-hidden="true">✓</span> Accede a tus recompensas</li>
+      </ul>
+      <p class="auth-storage-note">Tu cuenta se guarda en este navegador.</p>
     </div>
     <form class="login-form">
       <h2>Iniciar Sesión</h2>
@@ -69,6 +76,7 @@
     </form>
     </div>
   </section>
+  </main>
 
   <dialog class="recovery-dialog" id="password-recovery-dialog" aria-labelledby="recovery-title">
     <form class="recovery-form" id="password-recovery-form">
@@ -96,10 +104,13 @@
     </form>
   </dialog>
 
-  <footer>
-    <p>ChichaCook - Sabor venezolano <span class="bandera-venezuela" role="img" aria-label="Bandera de Venezuela"></span></p>
-</footer>
+  <footer class="site-footer">
+    <a class="footer-brand" href="index.html">CHICHA<span>COOK</span></a>
+    <p>El sabor venezolano siempre encuentra su lugar. <span class="bandera-venezuela" role="img" aria-label="Bandera de Venezuela"></span></p>
+    <small>© 2026 ChichaCook · Hecho con cariño</small>
+  </footer>
 
+  <div id="carrito" class="carrito"></div>
     <script src="js/script.js"></script>
 </body>
 </html>

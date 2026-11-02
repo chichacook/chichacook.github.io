@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/jpeg" href="imagenes/ChichaCook.png">
+    <link rel="icon" type="image/png" href="imagenes/ChichaCook.png">
     <title>ChichaCook</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -11,7 +11,7 @@
 
 <header>
     <a class="logo" href="index.html" aria-label="ChichaCook, inicio">
-        <img src="imagenes/ChichaCook.png" alt="Logotipo de ChichaCook">
+        <img src="imagenes/ChichaCook.png" alt="Logotipo de ChichaCook" decoding="async">
         <span class="logo-name"><span>CHICHA</span><span class="logo-accent">COOK</span></span>
     </a>
 
@@ -32,7 +32,7 @@
                         <a href="login.html">Iniciar sesión</a>
                         <a href="registrarse.html">Registrarse</a>
                 </nav>
-                <button type="button" onclick="mostrarCarrito()" aria-label="Mostrar carrito" aria-expanded="false">🛒 <b id="cantidad">0</b></button>
+                <button type="button" onclick="mostrarCarrito()" aria-label="Mostrar carrito" aria-expanded="false"><span class="cart-icon" aria-hidden="true">🛒</span><b id="cantidad">0</b></button>
         </div>
 
 </header>
@@ -49,7 +49,7 @@
             </div>
         </div>
         <div class="home-banner-product">
-            <img src="imagenes/ChichaCook.png" alt="Ilustración de una chicha venezolana y galletas ChichaCook">
+            <img src="imagenes/ChichaCook.png" alt="Ilustración de una chicha venezolana y galletas ChichaCook" decoding="async" fetchpriority="high">
             <div class="home-price-tag">
                 <span>CHICHA VENEZOLANA</span>
                 <strong>$1.200</strong>
@@ -130,7 +130,7 @@
                 </div>
             </article>
         </div>
-        <p class="home-account-note">Inicia sesión para guardar tu progreso y tus puntos.</p>
+        <p class="home-account-note" id="home-account-note">Inicia sesión para guardar tu progreso y tus puntos.</p>
         <div class="home-account-links">
             <a href="login.html">Iniciar sesión</a>
             <a href="registrarse.html">Crear una cuenta</a>
@@ -164,8 +164,8 @@
 
 <footer class="site-footer">
     <a class="footer-brand" href="index.html">CHICHA<span>COOK</span></a>
-    <p>El sabor venezolano siempre encuentra su lugar <span class="bandera-venezuela" role="img" aria-label="Bandera de Venezuela"></span></p>
-    <small>© ChichaCook</small>
+    <p>El sabor venezolano siempre encuentra su lugar. <span class="bandera-venezuela" role="img" aria-label="Bandera de Venezuela"></span></p>
+    <small>© 2026 ChichaCook · Hecho con cariño</small>
 </footer>
 
 <div id="carrito" class="carrito"></div>

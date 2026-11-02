@@ -1,17 +1,4 @@
-function limpiarCuentasGuardadasUnaVez() {
-    let marcaReinicio = "chichacookAccountsReset1000000";
-    try {
-        if (localStorage.getItem(marcaReinicio) === "completado") return;
-        localStorage.removeItem("chichacookUsers");
-        localStorage.removeItem("chichacookUser");
-        sessionStorage.removeItem("chichacookUsersSession");
-        sessionStorage.removeItem("chichacookSession");
-        localStorage.setItem(marcaReinicio, "completado");
-    } catch (error) {
-    }
-}
-
-limpiarCuentasGuardadasUnaVez();
+const LIMITE_PUNTOS_CUENTA = 15000;
 
 function cargarCarrito() {
     try {
@@ -130,6 +117,9 @@ function actualizarCantidad() {
     document.querySelectorAll("#cantidad").forEach(function(elemento) {
         elemento.textContent = carrito.length;
     });
+    document.querySelectorAll("header button[aria-label='Mostrar carrito']").forEach(function(boton) {
+        boton.setAttribute("aria-controls", "carrito");
+    });
 }
 
 let avisoActual = null;
@@ -214,7 +204,11 @@ function agregar() {
     };
 
     carrito.push(producto);
-    guardarCarrito();
+    if (!guardarCarrito()) {
+        carrito.pop();
+        mostrarAviso("No se pudo guardar el carrito en esta sesión. Libera espacio del navegador e inténtalo de nuevo.", "error");
+        return;
+    }
     actualizarCantidad();
 
     let caja = document.getElementById("carrito");
@@ -229,11 +223,36 @@ function mostrarCarrito() {
     let caja = document.getElementById("carrito");
     if (!caja) return;
 
-    let abierto = caja.classList.toggle("mostrar");
+    let abierto = !caja.classList.contains("mostrar");
+    caja.classList.toggle("mostrar", abierto);
     let botonCarrito = document.querySelector("header button[aria-label='Mostrar carrito']");
-    if (botonCarrito) botonCarrito.setAttribute("aria-expanded", abierto);
+    if (botonCarrito) botonCarrito.setAttribute("aria-expanded", String(abierto));
+    caja.setAttribute("role", "dialog");
+    caja.setAttribute("aria-modal", "true");
+    caja.setAttribute("aria-label", "Carrito de compras");
+    caja.setAttribute("tabindex", "-1");
+    let fondoCarrito = document.getElementById("carrito-backdrop");
+    if (abierto) {
+        if (!fondoCarrito) {
+            fondoCarrito = document.createElement("button");
+            fondoCarrito.id = "carrito-backdrop";
+            fondoCarrito.className = "cart-backdrop";
+            fondoCarrito.type = "button";
+            fondoCarrito.setAttribute("aria-label", "Cerrar carrito");
+            fondoCarrito.addEventListener("click", cerrarCarrito);
+            document.body.append(fondoCarrito);
+        }
+        document.body.classList.add("cart-open");
+    } else {
+        if (fondoCarrito) fondoCarrito.remove();
+        document.body.classList.remove("cart-open");
+    }
     renderizarCarrito();
-    if (abierto) posicionarCarrito();
+    if (abierto) {
+        posicionarCarrito();
+        let botonCerrar = caja.querySelector(".cart-close");
+        if (botonCerrar) botonCerrar.focus();
+    }
 }
 
 function posicionarCarrito() {
@@ -241,6 +260,7 @@ function posicionarCarrito() {
     let encabezado = document.querySelector("header");
     let botonCarrito = document.querySelector("header button[aria-label='Mostrar carrito']");
     if (!caja || !encabezado || !botonCarrito) return;
+    if (window.matchMedia("(max-width: 700px)").matches) return;
 
     let rectanguloEncabezado = encabezado.getBoundingClientRect();
     let rectanguloBoton = botonCarrito.getBoundingClientRect();
@@ -267,9 +287,51 @@ window.addEventListener("resize", function() {
 function cerrarCarrito() {
     let caja = document.getElementById("carrito");
     if (caja) caja.classList.remove("mostrar");
+    let fondoCarrito = document.getElementById("carrito-backdrop");
+    if (fondoCarrito) fondoCarrito.remove();
+    document.body.classList.remove("cart-open");
     let botonCarrito = document.querySelector("header button[aria-label='Mostrar carrito']");
     if (botonCarrito) botonCarrito.setAttribute("aria-expanded", "false");
+    if (botonCarrito) botonCarrito.focus();
 }
+
+document.addEventListener("keydown", function(evento) {
+    let caja = document.getElementById("carrito");
+    if (evento.key === "Escape") {
+        if (caja && caja.classList.contains("mostrar")) cerrarCarrito();
+        let navegacion = document.getElementById("main-nav");
+        if (navegacion && navegacion.classList.contains("is-open")) toggleMenu();
+        return;
+    }
+    if (!caja || !caja.classList.contains("mostrar")) return;
+    if (evento.key !== "Tab") return;
+    let elementosEnfocables = Array.from(caja.querySelectorAll(
+        "button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [tabindex]:not([tabindex='-1'])"
+    ));
+    if (elementosEnfocables.length === 0) {
+        evento.preventDefault();
+        caja.focus();
+        return;
+    }
+    let primero = elementosEnfocables[0];
+    let ultimo = elementosEnfocables[elementosEnfocables.length - 1];
+    if (evento.shiftKey && (document.activeElement === primero || !caja.contains(document.activeElement))) {
+        evento.preventDefault();
+        ultimo.focus();
+    } else if (!evento.shiftKey && (document.activeElement === ultimo || !caja.contains(document.activeElement))) {
+        evento.preventDefault();
+        primero.focus();
+    }
+});
+
+document.addEventListener("click", function(evento) {
+    let encabezado = document.querySelector("header");
+    let navegacion = document.getElementById("main-nav");
+    if (encabezado && navegacion && navegacion.classList.contains("is-open") &&
+        !encabezado.contains(evento.target)) {
+        toggleMenu();
+    }
+});
 
 function opcionesTopping(seleccionado) {
     let toppings = ["Ninguno", "Oreo", "M&M", "Chispas de chocolate"];
@@ -359,6 +421,8 @@ function cancelarEdicion() {
 }
 
 function guardarEdicion(indice) {
+    if (!carrito[indice]) return;
+    let productoAnterior = Object.assign({}, carrito[indice]);
     let topping1 = document.getElementById("editar-topping1-" + indice).value;
     let topping2 = document.getElementById("editar-topping2-" + indice).value;
     let extra = document.getElementById("editar-extra-" + indice).value;
@@ -366,14 +430,23 @@ function guardarEdicion(indice) {
     carrito[indice].toppings = topping1 + ", " + topping2;
     carrito[indice].extra = extra;
     carrito[indice].precio = extra === "Ninguno" ? 1200 : 1400;
-    guardarCarrito();
+    if (!guardarCarrito()) {
+        carrito[indice] = productoAnterior;
+        mostrarAviso("No se pudo guardar el cambio. Inténtalo de nuevo.", "error");
+        return;
+    }
     productoEditando = null;
     renderizarCarrito();
 }
 
 function eliminarProducto(indice) {
-    carrito.splice(indice, 1);
-    guardarCarrito();
+    if (!Number.isInteger(indice) || indice < 0 || indice >= carrito.length) return;
+    let productoEliminado = carrito.splice(indice, 1)[0];
+    if (!guardarCarrito()) {
+        carrito.splice(indice, 0, productoEliminado);
+        mostrarAviso("No se pudo actualizar el carrito. Inténtalo de nuevo.", "error");
+        return;
+    }
     productoEditando = null;
     actualizarCantidad();
     renderizarCarrito();
@@ -415,26 +488,38 @@ function comprar() {
         return total + producto.precio - (indice === indiceToppingGratis ? 200 : 0);
     }, 0);
     let pagoConfirmado = metodoPago.value === "efectivo" ? "efectivo" : "tarjeta";
-    let mensajeCompra = "¡Pedido realizado correctamente! Total: $" + totalCompra.toLocaleString("es-CL") +
-        ". Método de pago: " + pagoConfirmado + ".";
+    let mensajeCompra = "Pedido de demostración completado. No se ha procesado ningún pago. Total: $" +
+        totalCompra.toLocaleString("es-CL") + ". Método seleccionado: " + pagoConfirmado + ".";
 
+    let carritoAnterior = carrito;
+    carrito = [];
+    if (!guardarCarrito()) {
+        carrito = carritoAnterior;
+        mostrarAviso("No se pudo cerrar el carrito en esta sesión. El pedido de demostración no se procesó.", "error");
+        return;
+    }
     if (indiceToppingGratis >= 0 && cuentaCompra) {
         cuentaCompra.toppingGratisDisponible = false;
-        guardarCuentas(cuentasCompra);
+        try {
+            guardarCuentas(cuentasCompra);
+        } catch (error) {
+            cuentaCompra.toppingGratisDisponible = true;
+            carrito = carritoAnterior;
+            let carritoRestaurado = guardarCarrito();
+            mostrarAviso(carritoRestaurado
+                ? "No se pudo actualizar tu recompensa. El pedido no se procesó y el carrito se conservó."
+                : "No se pudo actualizar tu recompensa ni restaurar el carrito. Revisa el almacenamiento del navegador antes de continuar.",
+            "error");
+            return;
+        }
     }
-
-    carrito = [];
-    guardarCarrito();
     productoEditando = null;
 
     actualizarCantidad();
-
+    cerrarCarrito();
     document.querySelectorAll("#carrito").forEach(function(elemento) {
-        elemento.classList.remove("mostrar");
         elemento.innerHTML = "";
     });
-    let botonCarrito = document.querySelector("header button[aria-label='Mostrar carrito']");
-    if (botonCarrito) botonCarrito.setAttribute("aria-expanded", "false");
     mostrarAviso(mensajeCompra, "success");
 }
 
@@ -487,6 +572,7 @@ function obtenerCuentas() {
         else cuentas[indice] = cuentaTemporal;
     });
 
+    let cuentasMigradas = false;
     try {
         let cuentaAnterior = JSON.parse(localStorage.getItem("chichacookUser") || "null");
         if (cuentaAnterior && typeof cuentaAnterior === "object" && normalizarIdentificador(cuentaAnterior.username) &&
@@ -494,12 +580,34 @@ function obtenerCuentas() {
                 return normalizarIdentificador(cuenta.username) === normalizarIdentificador(cuentaAnterior.username);
             })) {
             cuentas.push(cuentaAnterior);
+            cuentasMigradas = true;
         }
-        if (cuentasTemporales.length || cuentaAnterior) {
+    } catch (error) {
+    }
+
+    cuentas.forEach(function(cuenta) {
+        let puntosActuales = puntosCuenta(cuenta);
+        let saldoLimitado = Math.min(puntosActuales, LIMITE_PUNTOS_CUENTA);
+        let puntosGanados = Number.isSafeInteger(cuenta.puntosGanados) && cuenta.puntosGanados >= 0
+            ? Math.min(cuenta.puntosGanados, LIMITE_PUNTOS_CUENTA)
+            : saldoLimitado;
+        puntosGanados = Math.max(puntosGanados, saldoLimitado);
+        if (cuenta.puntos !== saldoLimitado || cuenta.puntosGanados !== puntosGanados) {
+            cuenta.puntos = saldoLimitado;
+            cuenta.puntosGanados = puntosGanados;
+            cuentasMigradas = true;
+        }
+    });
+
+    if (cuentasTemporales.length || cuentasMigradas) {
+        try {
             localStorage.setItem("chichacookUsers", JSON.stringify(cuentas));
-            localStorage.removeItem("chichacookUser");
-            sessionStorage.removeItem("chichacookUsersSession");
+        } catch (error) {
         }
+    }
+    if (cuentasTemporales.length) sessionStorage.removeItem("chichacookUsersSession");
+    try {
+        if (localStorage.getItem("chichacookUser")) localStorage.removeItem("chichacookUser");
     } catch (error) {
     }
 
@@ -531,7 +639,24 @@ function puntosCuenta(cuenta) {
     return Number.isSafeInteger(cuenta.puntos) && cuenta.puntos >= 0 ? cuenta.puntos : 0;
 }
 
-function cambiarPuntosSesion(cambio) {
+function puntosGanadosCuenta(cuenta) {
+    if (Number.isSafeInteger(cuenta.puntosGanados) && cuenta.puntosGanados >= 0) {
+        return Math.min(cuenta.puntosGanados, LIMITE_PUNTOS_CUENTA);
+    }
+    return Math.min(puntosCuenta(cuenta), LIMITE_PUNTOS_CUENTA);
+}
+
+function actualizarAvisoLimiteJuegos(cuenta) {
+    let aviso = document.getElementById("points-limit-message");
+    if (!aviso) return;
+    let bloqueado = cuenta && puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA;
+    aviso.hidden = !bloqueado;
+    if (bloqueado) {
+        aviso.textContent = "Has alcanzado el máximo de 15.000 puntos ganados por cuenta. Los juegos están bloqueados; aún puedes canjear tus recompensas.";
+    }
+}
+
+function cambiarPuntosSesion(cambio, gananciaNeta) {
     let usuarioSesion = sessionStorage.getItem("chichacookSession");
     if (!usuarioSesion) return null;
 
@@ -541,31 +666,41 @@ function cambiarPuntosSesion(cambio) {
     });
     if (!cuenta) return null;
 
-    let nuevoSaldo = puntosCuenta(cuenta) + cambio;
+    let gananciaContabilizada = Number.isSafeInteger(gananciaNeta)
+        ? Math.max(0, gananciaNeta)
+        : Math.max(0, cambio);
+    let gananciaAcreditada = Math.min(
+        gananciaContabilizada,
+        Math.max(0, LIMITE_PUNTOS_CUENTA - puntosGanadosCuenta(cuenta))
+    );
+    let ajusteSinGanancia = cambio - gananciaContabilizada;
+    let nuevoSaldo = puntosCuenta(cuenta) + ajusteSinGanancia + gananciaAcreditada;
     if (!Number.isSafeInteger(nuevoSaldo) || nuevoSaldo < 0) return null;
     cuenta.puntos = nuevoSaldo;
+    cuenta.puntosGanados = puntosGanadosCuenta(cuenta) + gananciaAcreditada;
     guardarCuentas(cuentas);
-    document.querySelectorAll("#blackjack-points, #roulette-points, #reward-points, #topping-reward-points").forEach(function(elemento) {
+    document.querySelectorAll("#blackjack-points, #roulette-points, #penalty-points, #reward-points, #topping-reward-points").forEach(function(elemento) {
         elemento.textContent = cuenta.puntos.toLocaleString("es-CL");
     });
     document.querySelectorAll(".session-points").forEach(function(elemento) {
         elemento.textContent = "Puntos: " + cuenta.puntos.toLocaleString("es-CL");
         elemento.setAttribute("aria-label", cuenta.puntos.toLocaleString("es-CL") + " puntos disponibles");
     });
+    actualizarAvisoLimiteJuegos(cuenta);
     return cuenta.puntos;
 }
 
 function actualizarNavegacionSesion() {
     let usuario = sessionStorage.getItem("chichacookSession");
-    if (!usuario) return;
-    let cuenta = obtenerCuentaSesion();
+    let cuenta = usuario ? obtenerCuentaSesion() : null;
 
     document.querySelectorAll(".account-nav").forEach(function(navegacion) {
+        if (!cuenta) return;
         navegacion.replaceChildren();
 
         let saludo = document.createElement("span");
         saludo.className = "session-user";
-        saludo.textContent = "Hola, " + usuario;
+        saludo.textContent = "Hola, " + (cuenta.displayName || usuario);
 
         let puntos = document.createElement("span");
         puntos.className = "session-points";
@@ -580,6 +715,21 @@ function actualizarNavegacionSesion() {
 
         navegacion.append(saludo, puntos, botonCerrar);
     });
+
+    let notaInicio = document.getElementById("home-account-note");
+    let enlacesCuentaInicio = document.querySelector(".home-account-links");
+    if (notaInicio) {
+        if (cuenta) {
+            notaInicio.textContent = "¡Qué bueno verte, " + (cuenta.displayName || usuario) +
+                "! Tu progreso y tus puntos están listos para seguir creciendo.";
+            notaInicio.classList.add("is-signed-in");
+        } else {
+            notaInicio.textContent = "Inicia sesión para guardar tu progreso y tus puntos.";
+            notaInicio.classList.remove("is-signed-in");
+        }
+    }
+    if (enlacesCuentaInicio) enlacesCuentaInicio.hidden = Boolean(cuenta);
+    actualizarAvisoLimiteJuegos(cuenta);
 }
 
 function cerrarSesion() {
@@ -786,13 +936,15 @@ function iniciarBlackjack() {
         totalCasa.textContent = "Puntos: " + (revelarCasa
             ? calcularPuntos(manoCasa)
             : calcularPuntos(manoCasa.slice(0, 1)) + " + ?");
+        let cuenta = obtenerCuentaSesion();
+        let juegosBloqueados = cuenta && puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA;
+        actualizarAvisoLimiteJuegos(cuenta);
         botonPedir.disabled = !partidaActiva;
         botonPlantarse.disabled = !partidaActiva;
-        let cuenta = obtenerCuentaSesion();
-        botonDoblar.disabled = !partidaActiva || repartiendo || turnoDoblado || manoJugador.length !== 2 ||
+        botonDoblar.disabled = !partidaActiva || juegosBloqueados || repartiendo || turnoDoblado || manoJugador.length !== 2 ||
             !cuenta || puntosCuenta(cuenta) < apuestaActual;
-        botonNueva.disabled = partidaActiva || repartiendo;
-        apuestaInput.disabled = partidaActiva || repartiendo;
+        botonNueva.disabled = partidaActiva || repartiendo || juegosBloqueados;
+        apuestaInput.disabled = partidaActiva || repartiendo || juegosBloqueados;
         puntosJugador.textContent = cuenta
             ? puntosCuenta(cuenta).toLocaleString("es-CL")
             : "Inicia sesión";
@@ -825,10 +977,10 @@ function iniciarBlackjack() {
                 mostrarMensaje("¡Blackjack para ambos! Empate; se devuelve tu apuesta.", "tie");
             } else if (blackjackJugador) {
                 victorias++;
-                liquidarApuesta("win");
-                mostrarResultadoJuego("win", apuestaActual);
-                mostrarMensaje("¡Blackjack! Ganaste y recibes " +
-                    (apuestaActual * 2).toLocaleString("es-CL") + " puntos.", "win");
+                let gananciaAcreditada = liquidarApuesta("win");
+                mostrarResultadoJuego("win", gananciaAcreditada);
+                mostrarMensaje("¡Blackjack! Ganaste. Ganancia acreditada: " +
+                    gananciaAcreditada.toLocaleString("es-CL") + " puntos.", "win");
             } else {
                 derrotas++;
                 liquidarApuesta("loss");
@@ -903,12 +1055,20 @@ function iniciarBlackjack() {
     }
 
     function liquidarApuesta(resultado) {
-        if (apuestaLiquidada) return;
+        if (apuestaLiquidada) return 0;
         apuestaLiquidada = true;
 
         let devolucion = resultado === "win" ? apuestaActual * 2 : resultado === "tie" ? apuestaActual : 0;
-        if (devolucion > 0) cambiarPuntosSesion(devolucion);
+        let gananciaNeta = resultado === "win" ? apuestaActual : 0;
+        let cuentaAntes = obtenerCuentaSesion();
+        let gananciaAcreditada = cuentaAntes
+            ? Math.min(gananciaNeta, LIMITE_PUNTOS_CUENTA - puntosGanadosCuenta(cuentaAntes))
+            : 0;
+        let saldoActual = devolucion > 0
+            ? cambiarPuntosSesion(devolucion, gananciaNeta)
+            : null;
         borrarPartidaBlackjack();
+        return saldoActual === null ? 0 : gananciaAcreditada;
     }
 
     function mostrarMensaje(texto, resultado) {
@@ -952,12 +1112,12 @@ function iniciarBlackjack() {
                 apuestaActual.toLocaleString("es-CL") + " puntos.", "loss");
         } else if (puntosCasa > 21 || puntosJugador > puntosCasa) {
             victorias++;
-            liquidarApuesta("win");
-            mostrarResultadoJuego("win", apuestaActual);
+            let gananciaAcreditada = liquidarApuesta("win");
+            mostrarResultadoJuego("win", gananciaAcreditada);
             mostrarMensaje((puntosCasa > 21
                 ? "¡La casa se pasó de 21! ¡Ganaste!"
                 : "¡Ganaste con " + puntosJugador + " puntos!") +
-                " Recibes " + (apuestaActual * 2).toLocaleString("es-CL") + " puntos.", "win");
+                " Ganancia acreditada: " + gananciaAcreditada.toLocaleString("es-CL") + " puntos.", "win");
         } else if (puntosJugador < puntosCasa) {
             derrotas++;
             liquidarApuesta("loss");
@@ -979,6 +1139,11 @@ function iniciarBlackjack() {
         if (!cuenta) {
             actualizarMesa(false);
             mostrarMensaje("Inicia sesión para recibir tus puntos y jugar con apuestas.", "tie");
+            return;
+        }
+        if (puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA) {
+            actualizarMesa(false);
+            mostrarMensaje("Alcanzaste el máximo de 15.000 puntos ganados. Los juegos están bloqueados; aún puedes canjear recompensas.", "tie");
             return;
         }
         let cantidadApuesta = Number(apuestaInput.value);
@@ -1019,7 +1184,7 @@ function iniciarBlackjack() {
         cartasCasa.replaceChildren();
         actualizarMesa(false);
         if (!guardarPartidaBlackjack()) {
-            cambiarPuntosSesion(cantidadApuesta);
+            cambiarPuntosSesion(cantidadApuesta, 0);
             apuestaLiquidada = true;
             repartiendo = false;
             faseJuego = "idle";
@@ -1035,7 +1200,8 @@ function iniciarBlackjack() {
     }
 
     botonPedir.addEventListener("click", function() {
-        if (!partidaActiva || repartiendo || turnoDoblado) return;
+        let cuenta = obtenerCuentaSesion();
+        if (!partidaActiva || repartiendo || turnoDoblado || !cuenta) return;
         repartiendo = true;
         partidaActiva = false;
         let carta = tomarCarta();
@@ -1061,6 +1227,7 @@ function iniciarBlackjack() {
     botonDoblar.addEventListener("click", function() {
         if (!partidaActiva || repartiendo || turnoDoblado || manoJugador.length !== 2) return;
         let cuenta = obtenerCuentaSesion();
+        if (cuenta && puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA) return;
         if (!cuenta || puntosCuenta(cuenta) < apuestaActual) {
             mostrarMensaje("No tienes saldo suficiente para doblar la apuesta.", "loss");
             actualizarMesa(false);
@@ -1279,6 +1446,10 @@ function iniciarRuleta() {
             mostrarMensaje("Inicia sesión para preparar apuestas.", "loss");
             return false;
         }
+        if (puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA) {
+            mostrarMensaje("Alcanzaste el máximo de 15.000 puntos ganados. Los juegos están bloqueados; aún puedes canjear recompensas.", "loss");
+            return false;
+        }
 
         let total = totalApostado();
         if (!Number.isSafeInteger(importe) || importe <= 0 || !Number.isSafeInteger(total + importe)) {
@@ -1416,12 +1587,17 @@ function iniciarRuleta() {
         rueda.setAttribute("aria-label", "Ruleta americana: salió " + numero + " " + color);
 
         if (premio > 0) {
-            let saldo = cambiarPuntosSesion(premio);
+            let gananciaNeta = premio - cantidadApuesta;
+            let gananciaContabilizable = Math.max(0, gananciaNeta);
+            let cuentaAntes = obtenerCuentaSesion();
+            let gananciaAcreditada = cuentaAntes
+                ? Math.min(gananciaContabilizable, LIMITE_PUNTOS_CUENTA - puntosGanadosCuenta(cuentaAntes))
+                : 0;
+            let saldo = cambiarPuntosSesion(premio, gananciaContabilizable);
             if (saldo === null) {
                 mostrarResultadoJuego("loss", cantidadApuesta);
                 mostrarMensaje("Salió " + numero + " " + color + ". No se pudo abonar el premio.", "loss");
             } else {
-                let gananciaNeta = premio - cantidadApuesta;
                 let resultadoNeto = gananciaNeta > 0
                     ? "win"
                     : gananciaNeta < 0
@@ -1437,7 +1613,8 @@ function iniciarRuleta() {
                 mostrarMensaje((recuperado ? "Giro recuperado. " : "") + "Salió " + numero + " " + color +
                     ": premio total " + premio.toLocaleString("es-CL") +
                     " puntos (incluye " + importeGanador.toLocaleString("es-CL") +
-                    " de apuestas devueltas; ganancia neta " + gananciaNeta.toLocaleString("es-CL") + ").", "win");
+                    " de apuestas devueltas; ganancia neta " + gananciaNeta.toLocaleString("es-CL") +
+                    ", acreditada al límite " + gananciaAcreditada.toLocaleString("es-CL") + ").", "win");
                 mensaje.classList.remove("is-win", "is-loss");
                 if (resultadoNeto !== "tie") mensaje.classList.add("is-" + resultadoNeto);
             }
@@ -1576,7 +1753,8 @@ function iniciarRuleta() {
 
             let cuenta = obtenerCuentaSesion();
             let total = totalApostado();
-            if (!cuenta || !Number.isSafeInteger(total) || total > puntosCuenta(cuenta)) {
+            if (!cuenta || puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA ||
+                !Number.isSafeInteger(total) || total > puntosCuenta(cuenta)) {
                 apuestasPendientes = [];
             }
             guardarApuestasPendientes();
@@ -1645,16 +1823,24 @@ function iniciarRuleta() {
 
         let total = totalApostado();
         let cuenta = obtenerCuentaSesion();
+        let juegosBloqueados = cuenta && puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA;
         let restante = cuenta ? Math.max(0, puntosCuenta(cuenta) - total) : 0;
         contadorApuestas.textContent = "Apuestas preparadas: " + apuestasPendientes.length;
         totalApuestaTexto.textContent = "Total apostado: " + total.toLocaleString("es-CL") +
             " puntos · Saldo restante: " + restante.toLocaleString("es-CL");
         botonLimpiarApuestas.disabled = girando || apuestasPendientes.length === 0;
-        botonAgregarApuesta.disabled = girando;
+        botonAgregarApuesta.disabled = girando || juegosBloqueados;
         botonDeshacerApuesta.disabled = girando || apuestasPendientes.length === 0;
-        botonApuestaMaxima.disabled = girando || restante === 0;
+        botonApuestaMaxima.disabled = girando || juegosBloqueados || restante === 0;
         fichasRapidas.forEach(function(ficha) {
-            ficha.disabled = girando;
+            ficha.disabled = girando || juegosBloqueados;
+        });
+        apuestaInput.disabled = girando || juegosBloqueados;
+        opciones.forEach(function(opcion) {
+            opcion.disabled = girando || juegosBloqueados;
+        });
+        botonesCasilla.forEach(function(boton) {
+            boton.disabled = girando || juegosBloqueados;
         });
         apuestaInput.max = String(restante);
         if (apuestasPendientes.length === 0 && temporizadorApuesta !== null) {
@@ -1663,20 +1849,23 @@ function iniciarRuleta() {
     }
 
     function cambiarEstadoControles(bloqueado) {
-        apuestaInput.disabled = bloqueado;
-        botonAgregarApuesta.disabled = bloqueado;
+        let cuenta = obtenerCuentaSesion();
+        let deshabilitado = bloqueado || (cuenta &&
+            puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA);
+        apuestaInput.disabled = deshabilitado;
+        botonAgregarApuesta.disabled = deshabilitado;
         botonDeshacerApuesta.disabled = bloqueado || apuestasPendientes.length === 0;
-        botonApuestaMaxima.disabled = bloqueado || (obtenerCuentaSesion() &&
-            puntosCuenta(obtenerCuentaSesion()) <= totalApostado());
+        botonApuestaMaxima.disabled = deshabilitado || (cuenta &&
+            puntosCuenta(cuenta) <= totalApostado());
         botonLimpiarApuestas.disabled = bloqueado || apuestasPendientes.length === 0;
         fichasRapidas.forEach(function(ficha) {
-            ficha.disabled = bloqueado;
+            ficha.disabled = deshabilitado;
         });
         opciones.forEach(function(opcion) {
-            opcion.disabled = bloqueado;
+            opcion.disabled = deshabilitado;
         });
         botonesCasilla.forEach(function(boton) {
-            boton.disabled = bloqueado;
+            boton.disabled = deshabilitado;
         });
         if (!bloqueado) actualizarApuestas();
     }
@@ -1810,6 +1999,10 @@ function iniciarRuleta() {
             mostrarMensaje("Inicia sesión para apostar tus puntos en la ruleta.", "loss");
             return;
         }
+        if (puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA) {
+            mostrarMensaje("Alcanzaste el máximo de 15.000 puntos ganados. Los juegos están bloqueados; aún puedes canjear recompensas.", "loss");
+            return;
+        }
         desactivarApuestaRapida();
         apuestaInput.value = String(Math.max(0, puntosCuenta(cuenta) - totalApostado()));
         apuestaInput.focus();
@@ -1876,6 +2069,13 @@ function iniciarRuleta() {
             apuestasPendientes = [];
             actualizarApuestas();
             actualizarSaldo();
+            cancelarCuentaAtras();
+            return;
+        }
+        if (puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA) {
+            mostrarMensaje("Alcanzaste el máximo de 15.000 puntos ganados. Los juegos están bloqueados; aún puedes canjear recompensas.", "loss");
+            apuestasPendientes = [];
+            actualizarApuestas();
             cancelarCuentaAtras();
             return;
         }
@@ -2028,6 +2228,7 @@ document.querySelector(".register-form")?.addEventListener("submit", function(ev
         password,
         displayName,
         puntos: 0,
+        puntosGanados: 0,
         bonoInicioSesionOtorgado: false
     });
     guardarCuentas(cuentas);
@@ -2069,12 +2270,18 @@ document.querySelector(".login-form")?.addEventListener("submit", function(event
     let saldo = puntosCuenta(cuenta);
     let bonoAplicado = cuenta.bonoInicioSesionOtorgado !== true;
     let bonoBienvenida = 3000;
+    let bonoAcreditado = 0;
     if (bonoAplicado) {
-        if (saldo > Number.MAX_SAFE_INTEGER - bonoBienvenida) {
+        bonoAcreditado = Math.min(
+            bonoBienvenida,
+            LIMITE_PUNTOS_CUENTA - puntosGanadosCuenta(cuenta)
+        );
+        if (saldo > Number.MAX_SAFE_INTEGER - bonoAcreditado) {
             mostrarAviso("No se pudo aplicar el bono de bienvenida porque el saldo superaría el límite permitido.", "error");
             return;
         }
-        cuenta.puntos = saldo + bonoBienvenida;
+        cuenta.puntos = saldo + bonoAcreditado;
+        cuenta.puntosGanados = puntosGanadosCuenta(cuenta) + bonoAcreditado;
         cuenta.bonoInicioSesionOtorgado = true;
         guardarCuentas(cuentas);
         saldo = cuenta.puntos;
@@ -2083,7 +2290,10 @@ document.querySelector(".login-form")?.addEventListener("submit", function(event
     sessionStorage.setItem("chichacookSession", cuenta.username);
     let mensajeInicioSesion = bonoAplicado
         ? "¡Bienvenido/a, " + cuenta.displayName +
-            "! Recibiste tu bono único de bienvenida de " + bonoBienvenida.toLocaleString("es-CL") + " puntos. Tu saldo es de " +
+            (bonoAcreditado > 0
+                ? "! Recibiste " + bonoAcreditado.toLocaleString("es-CL") + " puntos de tu bono único de bienvenida."
+                : "! Ya alcanzaste el máximo de puntos ganados por cuenta; no se pudo acreditar el bono de bienvenida.") +
+            " Tu saldo es de " +
             saldo.toLocaleString("es-CL") + " puntos."
         : "¡Bienvenido/a, " + cuenta.displayName + "! Tu saldo es de " +
             saldo.toLocaleString("es-CL") + " puntos.";
@@ -2235,19 +2445,826 @@ document.getElementById("redeem-topping-reward")?.addEventListener("click", func
 function toggleMenu() {
     let boton = document.querySelector(".menu-toggle");
     let navegacion = document.getElementById("main-nav");
+    if (!boton || !navegacion) return;
     let abierto = navegacion.classList.toggle("is-open");
-    boton.setAttribute("aria-expanded", abierto);
+    boton.setAttribute("aria-expanded", String(abierto));
     boton.setAttribute("aria-label", abierto ? "Cerrar menú" : "Abrir menú");
     let caja = document.getElementById("carrito");
     if (caja && caja.classList.contains("mostrar")) posicionarCarrito();
 }
 
+function iniciarJuegoPenales() {
+    let panel = document.querySelector(".penalty-section");
+    if (!panel) return;
+
+    let reiniciar = document.getElementById("penalty-reset");
+    let botonAccion = document.getElementById("penalty-action");
+    let avance = document.getElementById("penalty-progress");
+    let faseTexto = document.getElementById("penalty-phase");
+    let saldo = document.getElementById("penalty-points");
+    let marcadorGoles = document.getElementById("penalty-goals");
+    let marcadorAtajadas = document.getElementById("penalty-saves");
+    let marcadorTiro = document.getElementById("penalty-round");
+    let indicadoresGoles = Array.from(document.querySelectorAll("#penalty-kick-indicators li"));
+    let indicadoresAtajadas = Array.from(document.querySelectorAll("#penalty-save-indicators li"));
+    let potenciaTrack = document.getElementById("penalty-power-track");
+    let potenciaRelleno = document.getElementById("penalty-power-fill");
+    let potenciaTexto = document.getElementById("penalty-power-label");
+    let controlPotencia = panel.querySelector(".penalty-power");
+    let apuestaInput = document.getElementById("penalty-bet");
+    let apuestaFeedback = document.getElementById("penalty-bet-feedback");
+    let selectorArquero = document.getElementById("penalty-keeper-select");
+    let selectorPateador = document.getElementById("penalty-shooter-select");
+    let cancha = panel.querySelector(".penalty-pitch");
+    let arco = panel.querySelector(".penalty-goal");
+    let arquero = panel.querySelector(".penalty-keeper");
+    let pateador = panel.querySelector(".penalty-shooter");
+    let pelota = panel.querySelector(".penalty-ball");
+    let puntoElegido = { x: 50, y: 48 };
+    let tirosRealizados = 0;
+    let goles = 0;
+    let atajadas = 0;
+    let fase = "kick";
+    let tandaTerminada = false;
+    let tandaIniciada = false;
+    let resolviendoTiro = false;
+    let potencia = 0;
+    let intervaloPotencia = null;
+    let cargandoPotencia = false;
+    let botonPuntero = null;
+    let ignorarClickSiguiente = false;
+    arquero.dataset.keeper = selectorArquero.value;
+    pateador.dataset.player = selectorPateador.value;
+
+    function limitar(valor, minimo, maximo) {
+        return Math.max(minimo, Math.min(maximo, valor));
+    }
+
+    function colocarObjetivo(x, y) {
+        puntoElegido = {
+            x: limitar(x, 6, 94),
+            y: limitar(y, 8, 86)
+        };
+        let marcador = panel.querySelector(".penalty-aim-marker");
+        marcador.style.left = puntoElegido.x + "%";
+        marcador.style.top = puntoElegido.y + "%";
+        actualizarSeleccion();
+    }
+
+    function describirPunto(punto) {
+        let horizontal = punto.x < 36 ? "a la izquierda" : punto.x > 64 ? "a la derecha" : "al centro";
+        let vertical = punto.y < 34 ? "arriba" : punto.y > 66 ? "abajo" : "a media altura";
+        return horizontal + " y " + vertical;
+    }
+
+    function colocarArquero(punto, lanzandose) {
+        let alturaArco = Math.max(1, arco.clientHeight);
+        let alturaArquero = arquero.offsetHeight;
+        let mitadArquero = alturaArquero / 2;
+        let centroVertical = limitar(
+            punto.y / 100 * alturaArco,
+            mitadArquero,
+            Math.max(mitadArquero, alturaArco - mitadArquero)
+        );
+        arquero.style.left = limitar(punto.x, 15, 85) + "%";
+        arquero.style.top = centroVertical / alturaArco * 100 + "%";
+        arquero.style.setProperty("--keeper-tilt", (punto.x < 42 ? "-18deg" : punto.x > 58 ? "18deg" : "0deg"));
+        arquero.classList.toggle("is-diving", Boolean(lanzandose));
+    }
+
+    function colocarBalonEnArco(punto) {
+        let rectArco = arco.getBoundingClientRect();
+        let rectCancha = cancha.getBoundingClientRect();
+        let x = rectArco.left - rectCancha.left + rectArco.width * punto.x / 100;
+        let y = rectArco.top - rectCancha.top + rectArco.height * punto.y / 100;
+        pelota.style.left = (x / rectCancha.width * 100) + "%";
+        pelota.style.top = (y / rectCancha.height * 100) + "%";
+    }
+
+    function actualizarPuntoDesdeEvento(evento) {
+        let rect = arco.getBoundingClientRect();
+        colocarObjetivo(
+            (evento.clientX - rect.left) / rect.width * 100,
+            (evento.clientY - rect.top) / rect.height * 100
+        );
+    }
+
+    function cuentaActual() {
+        return obtenerCuentaSesion();
+    }
+
+    function actualizarPotencia(valor) {
+        potencia = Math.max(0, Math.min(100, valor));
+        potenciaRelleno.style.width = potencia + "%";
+        potenciaTexto.textContent = Math.round(potencia) + "%";
+        potenciaTrack.setAttribute("aria-valuenow", String(Math.round(potencia)));
+        potenciaRelleno.classList.toggle("is-strong", potencia >= 75);
+    }
+
+    colocarObjetivo(50, 48);
+    colocarArquero({ x: 50, y: 48 }, false);
+    pelota.style.left = "50%";
+    pelota.style.top = "87%";
+
+    function detenerCargaPotencia() {
+        if (intervaloPotencia !== null) {
+            window.clearInterval(intervaloPotencia);
+            intervaloPotencia = null;
+        }
+        cargandoPotencia = false;
+        botonAccion.classList.remove("is-charging");
+        if (botonPuntero !== null && botonAccion.hasPointerCapture(botonPuntero)) {
+            botonAccion.releasePointerCapture(botonPuntero);
+        }
+        botonPuntero = null;
+    }
+
+    function marcarIndicador(indicadores, indice, acierto, etiqueta) {
+        let indicador = indicadores[indice];
+        if (!indicador) return;
+        indicador.classList.remove("is-success", "is-failure");
+        indicador.classList.add(acierto ? "is-success" : "is-failure");
+        indicador.textContent = acierto ? "✓" : "×";
+        indicador.setAttribute("aria-label", etiqueta + " " + (indice + 1) +
+            (acierto ? ": exitoso" : ": fallido"));
+    }
+
+    function leerApuesta(cuenta) {
+        if (!apuestaInput.value.trim()) {
+            apuestaFeedback.textContent = "Escribe un número o 0 para jugar sin apostar.";
+            return null;
+        }
+        let importe = Number(apuestaInput.value);
+        if (!cuenta) {
+            apuestaFeedback.textContent = "Inicia sesión para apostar puntos virtuales.";
+            return null;
+        }
+        if (!Number.isSafeInteger(importe) || importe < 0) {
+            apuestaFeedback.textContent = "Ingresa una cantidad entera de puntos o 0 para jugar sin apostar.";
+            return null;
+        }
+        if (importe > puntosCuenta(cuenta)) {
+            apuestaFeedback.textContent = "Tu apuesta supera el saldo disponible.";
+            return null;
+        }
+        apuestaFeedback.textContent = importe === 0
+            ? "Jugarás este tiro sin apuesta."
+            : "Si aciertas, ganas " + importe.toLocaleString("es-CL") +
+                " puntos netos; si fallas, pierdes la apuesta.";
+        return importe;
+    }
+
+    function liquidarApuesta(cuenta, importe, acierto) {
+        let puntosGanadosAntes = puntosGanadosCuenta(cuenta);
+        let bonoPosible = acierto
+            ? Math.min(100, Math.max(0, LIMITE_PUNTOS_CUENTA - puntosGanadosAntes - importe))
+            : 0;
+        let cambio = acierto ? importe + bonoPosible : -importe;
+        let gananciaNeta = acierto ? importe + bonoPosible : 0;
+        let saldoNuevo;
+        try {
+            saldoNuevo = cambiarPuntosSesion(cambio, gananciaNeta);
+        } catch (error) {
+            console.error("No se pudo guardar el resultado de la apuesta de penales.", error);
+            return { error: true, apuesta: 0, bono: 0 };
+        }
+        if (saldoNuevo === null) return { error: true, apuesta: 0, bono: 0 };
+
+        let cuentaActualizada = cuentaActual();
+        let gananciaAcreditada = cuentaActualizada
+            ? Math.max(0, puntosGanadosCuenta(cuentaActualizada) - puntosGanadosAntes)
+            : 0;
+        return {
+            error: false,
+            apuesta: Math.min(acierto ? importe : 0, gananciaAcreditada),
+            bono: Math.max(0, gananciaAcreditada - Math.min(acierto ? importe : 0, gananciaAcreditada))
+        };
+    }
+
+    function actualizarMarcador() {
+        marcadorGoles.textContent = String(goles);
+        marcadorAtajadas.textContent = String(atajadas);
+        marcadorTiro.textContent = tandaTerminada
+            ? "Tanda terminada"
+            : "Penal " + (tirosRealizados + 1) + " de 3";
+    }
+
+    function actualizarSeleccion() {
+        let seleccion = fase === "kick"
+            ? "Apunta " + describirPunto(puntoElegido) + "."
+            : "Te lanzarás " + describirPunto(puntoElegido) + ".";
+        arco.setAttribute("aria-label", seleccion + " Toca otro lugar del arco para cambiarlo.");
+    }
+
+    function limpiarAnimacion() {
+        cancha.classList.remove("is-goal", "is-saved", "is-missed", "is-blocked");
+        cancha.dataset.phase = fase;
+        pateador.classList.remove("is-shooting");
+        actualizarPotencia(0);
+    }
+
+    function actualizarEstado() {
+        let cuenta = cuentaActual();
+        let limiteAlcanzado = cuenta && puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA;
+        let bloqueoPorLimite = Boolean(limiteAlcanzado && (!tandaIniciada || tandaTerminada));
+        let continuarSinApuesta = Boolean(limiteAlcanzado && tandaIniciada && !tandaTerminada);
+        if (continuarSinApuesta && Number(apuestaInput.value) > 0) apuestaInput.value = "0";
+        let importeApuesta = leerApuesta(cuenta);
+        if (continuarSinApuesta) {
+            apuestaFeedback.textContent = "Llegaste al límite de puntos; termina esta tanda sin nuevas apuestas.";
+        }
+        cancha.dataset.phase = fase;
+        if (saldo) saldo.textContent = cuenta
+            ? puntosCuenta(cuenta).toLocaleString("es-CL")
+            : "Inicia sesión";
+        arco.setAttribute("aria-disabled", String(!cuenta || bloqueoPorLimite ||
+            tandaTerminada || resolviendoTiro || cargandoPotencia));
+        arco.tabIndex = cuenta && !bloqueoPorLimite && !tandaTerminada &&
+            !resolviendoTiro && !cargandoPotencia ? 0 : -1;
+        apuestaInput.max = cuenta ? String(puntosCuenta(cuenta)) : "0";
+        apuestaInput.disabled = !cuenta || bloqueoPorLimite || continuarSinApuesta ||
+            tandaTerminada || resolviendoTiro || cargandoPotencia;
+        selectorArquero.disabled = resolviendoTiro || cargandoPotencia;
+        selectorPateador.disabled = resolviendoTiro || cargandoPotencia;
+        reiniciar.disabled = !cuenta || !tandaTerminada || Boolean(limiteAlcanzado);
+        botonAccion.disabled = !cuenta || bloqueoPorLimite || tandaTerminada || resolviendoTiro ||
+            importeApuesta === null;
+        botonAccion.textContent = fase === "kick"
+            ? (cargandoPotencia ? "Suelta para patear" : "Mantén para cargar potencia")
+            : "Atajar en el punto elegido";
+        botonAccion.setAttribute("aria-label", fase === "kick"
+            ? "Mantén presionado y suelta para patear con la potencia elegida"
+            : "Lanzarte al punto elegido para intentar atajar");
+        controlPotencia.hidden = fase !== "kick";
+        actualizarPotencia(0);
+        faseTexto.textContent = fase === "kick"
+            ? "Toca cualquier lugar del arco para apuntar. Mantén el botón para cargar potencia y suelta para patear."
+            : "Toca cualquier lugar del arco y pulsa «Atajar» para lanzarte allí.";
+        actualizarSeleccion();
+        actualizarMarcador();
+        actualizarAvisoLimiteJuegos(cuenta);
+    }
+
+    function finalizarAccion(puntoSeleccionado, potenciaTiro, importeApuesta) {
+        let cuenta = cuentaActual();
+        if (!cuenta) {
+            avance.textContent = "Inicia sesión para guardar tus puntos y jugar.";
+            actualizarEstado();
+            return;
+        }
+        if (puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA &&
+            (!tandaIniciada || tandaTerminada)) {
+            avance.textContent = "Llegaste al máximo de 15.000 puntos ganados por cuenta.";
+            actualizarEstado();
+            return;
+        }
+        if (tandaTerminada || resolviendoTiro || tirosRealizados >= 3) return;
+        if (importeApuesta === undefined) importeApuesta = leerApuesta(cuenta);
+        if (!Number.isSafeInteger(importeApuesta) || importeApuesta < 0 ||
+            importeApuesta > puntosCuenta(cuenta) || importeApuesta !== Number(apuestaInput.value)) {
+            actualizarEstado();
+            return;
+        }
+
+        resolviendoTiro = true;
+        tandaIniciada = true;
+        limpiarAnimacion();
+        if (fase === "kick") {
+            pateador.classList.add("is-shooting");
+            let puntoArquero = {
+                x: 16 + Math.random() * 68,
+                y: 18 + Math.random() * 42
+            };
+            colocarArquero(puntoArquero, true);
+            colocarBalonEnArco(puntoSeleccionado);
+            let distancia = Math.hypot(
+                (puntoSeleccionado.x - puntoArquero.x) * arco.clientWidth / 100,
+                (puntoSeleccionado.y - puntoArquero.y) * arco.clientHeight / 100
+            );
+            let alcanceArquero = 78 - potenciaTiro * .31;
+            let arqueroAtajo = distancia <= alcanceArquero;
+            if (!arqueroAtajo) {
+                cancha.classList.add("is-goal");
+                goles++;
+                marcarIndicador(indicadoresGoles, tirosRealizados, true, "Penal");
+                let resultadoApuesta = liquidarApuesta(cuenta, importeApuesta, true);
+                avance.textContent = "¡Gol! Apuntaste " + describirPunto(puntoSeleccionado) +
+                    " con " + Math.round(potenciaTiro) + "% de potencia." +
+                    textoResultadoApuesta(resultadoApuesta, importeApuesta, true);
+            } else {
+                cancha.classList.add("is-saved");
+                marcarIndicador(indicadoresGoles, tirosRealizados, false, "Penal");
+                let resultadoApuesta = liquidarApuesta(cuenta, importeApuesta, false);
+                avance.textContent = "El arquero atajó tu tiro " + describirPunto(puntoSeleccionado) + "." +
+                    textoResultadoApuesta(resultadoApuesta, importeApuesta, false) +
+                    " Prueba otro punto o más potencia.";
+            }
+            fase = "defend";
+        } else {
+            let puntoRival = {
+                x: 12 + Math.random() * 76,
+                y: 12 + Math.random() * 72
+            };
+            colocarArquero(puntoSeleccionado, true);
+            colocarBalonEnArco(puntoRival);
+            let distancia = Math.hypot(
+                (puntoSeleccionado.x - puntoRival.x) * arco.clientWidth / 100,
+                (puntoSeleccionado.y - puntoRival.y) * arco.clientHeight / 100
+            );
+            if (distancia <= 78) {
+                cancha.classList.add("is-blocked");
+                atajadas++;
+                marcarIndicador(indicadoresAtajadas, tirosRealizados, true, "Atajada");
+                let resultadoApuesta = liquidarApuesta(cuenta, importeApuesta, true);
+                avance.textContent = "¡Atajada! Te lanzaste " + describirPunto(puntoSeleccionado) + "." +
+                    textoResultadoApuesta(resultadoApuesta, importeApuesta, true);
+            } else {
+                cancha.classList.add("is-missed");
+                marcarIndicador(indicadoresAtajadas, tirosRealizados, false, "Atajada");
+                let resultadoApuesta = liquidarApuesta(cuenta, importeApuesta, false);
+                avance.textContent = "El rival pateó " + describirPunto(puntoRival) +
+                    " y no lograste atajarlo." +
+                    textoResultadoApuesta(resultadoApuesta, importeApuesta, false) + " ¡A por el siguiente!";
+            }
+            tirosRealizados++;
+            fase = "kick";
+        }
+
+        if (tirosRealizados === 3 && fase === "kick") {
+            tandaTerminada = true;
+            faseTexto.textContent = "Tanda completa";
+            avance.textContent += " Final: " + goles + " goles y " + atajadas + " atajadas.";
+            let cuentaFinal = cuentaActual();
+            if (cuentaFinal && puntosGanadosCuenta(cuentaFinal) >= LIMITE_PUNTOS_CUENTA) {
+                avance.textContent += " Alcanzaste el máximo de puntos ganados.";
+            }
+        }
+        actualizarEstado();
+        window.setTimeout(function() {
+            resolviendoTiro = false;
+            pateador.classList.remove("is-shooting");
+            actualizarEstado();
+        }, 400);
+    }
+
+    function textoResultadoApuesta(resultado, importe, acierto) {
+        if (resultado.error) {
+            return " No se pudo guardar el resultado de los puntos; revisa el almacenamiento.";
+        }
+        if (importe === 0) {
+            if (!acierto) return " Jugaste sin apostar; no se descontaron puntos.";
+            return resultado.bono
+                ? " Jugaste sin apostar y ganaste " + resultado.bono.toLocaleString("es-CL") + " puntos de juego."
+                : " Acertaste sin apostar, pero ya alcanzaste el límite de puntos ganados.";
+        }
+        if (!acierto) return " Perdiste la apuesta de " + importe.toLocaleString("es-CL") + " puntos.";
+
+        let mensaje = " Apuesta acertada: +" + resultado.apuesta.toLocaleString("es-CL") +
+            " puntos netos (cobro equivalente a 2× la apuesta, incluida su devolución).";
+        if (resultado.bono > 0) {
+            mensaje += " Bonificación del juego: +" + resultado.bono.toLocaleString("es-CL") + " puntos.";
+        }
+        if (resultado.apuesta < importe || resultado.bono < 100) {
+            mensaje += " El total acreditado se ajustó al límite de 15.000 puntos ganados.";
+        }
+        return mensaje;
+    }
+
+    function iniciarCargaPotencia(evento) {
+        if (fase !== "kick" || botonAccion.disabled || cargandoPotencia) return;
+        if (leerApuesta(cuentaActual()) === null) {
+            actualizarEstado();
+            return;
+        }
+        if (evento && evento.type === "pointerdown") {
+            evento.preventDefault();
+            botonPuntero = evento.pointerId;
+            botonAccion.setPointerCapture(evento.pointerId);
+        }
+        cargandoPotencia = true;
+        botonAccion.classList.add("is-charging");
+        actualizarEstado();
+        intervaloPotencia = window.setInterval(function() {
+            actualizarPotencia(Math.min(100, potencia + 3));
+        }, 70);
+    }
+
+    function soltarCargaPotencia(evento) {
+        if (!cargandoPotencia || (evento && botonPuntero !== null && evento.pointerId !== botonPuntero)) return;
+        if (evento) evento.preventDefault();
+        let potenciaFinal = Math.max(15, potencia);
+        detenerCargaPotencia();
+        ignorarClickSiguiente = true;
+        window.setTimeout(function() {
+            ignorarClickSiguiente = false;
+        }, 0);
+        finalizarAccion(puntoElegido, potenciaFinal, Number(apuestaInput.value));
+    }
+
+    function cancelarCargaPotencia() {
+        if (!cargandoPotencia) return;
+        detenerCargaPotencia();
+        actualizarPotencia(0);
+        actualizarEstado();
+    }
+
+    arco.addEventListener("click", function(evento) {
+        if (evento.detail === 0 || !cuentaActual() || resolviendoTiro ||
+            cargandoPotencia || tandaTerminada) return;
+        actualizarPuntoDesdeEvento(evento);
+        if (fase === "defend") colocarArquero(puntoElegido, false);
+        actualizarEstado();
+        avance.textContent = fase === "kick"
+            ? "Apuntaste " + describirPunto(puntoElegido) + ". Mantén el botón para cargar y soltar para patear."
+            : "Te lanzarás " + describirPunto(puntoElegido) + ". Pulsa Atajar para confirmar.";
+    });
+
+    arco.addEventListener("keydown", function(evento) {
+        if (!cuentaActual() || resolviendoTiro || cargandoPotencia || tandaTerminada) return;
+        let movimientos = {
+            ArrowLeft: [-5, 0],
+            ArrowRight: [5, 0],
+            ArrowUp: [0, -5],
+            ArrowDown: [0, 5]
+        };
+        if (movimientos[evento.key]) {
+            evento.preventDefault();
+            colocarObjetivo(
+                puntoElegido.x + movimientos[evento.key][0],
+                puntoElegido.y + movimientos[evento.key][1]
+            );
+            if (fase === "defend") colocarArquero(puntoElegido, false);
+            return;
+        }
+        if (evento.key === "Enter" || evento.key === " ") {
+            evento.preventDefault();
+            actualizarSeleccion();
+        }
+    });
+
+    selectorArquero.addEventListener("change", function(evento) {
+        arquero.dataset.keeper = evento.currentTarget.value;
+    });
+
+    selectorPateador.addEventListener("change", function(evento) {
+        let jugador = evento.currentTarget.value;
+        let dorsales = {
+            mbappe: { nombre: "MBAPPÉ", numero: "10" },
+            lamine: { nombre: "LAMINE", numero: "10" },
+            ronaldo: { nombre: "RONALDO", numero: "7" },
+            messi: { nombre: "MESSI", numero: "10" }
+        };
+        let dorsal = dorsales[jugador];
+        if (!dorsal) {
+            throw new Error("No se encontró el diseño del jugador seleccionado.");
+        }
+        pateador.dataset.player = jugador;
+        pateador.querySelector(".shooter-name").textContent = dorsal.nombre;
+        pateador.querySelector(".shooter-number").textContent = dorsal.numero;
+    });
+
+    botonAccion.addEventListener("pointerdown", iniciarCargaPotencia);
+    botonAccion.addEventListener("pointerup", soltarCargaPotencia);
+    botonAccion.addEventListener("pointercancel", function(evento) {
+        if (botonPuntero === null || evento.pointerId === botonPuntero) cancelarCargaPotencia();
+    });
+    botonAccion.addEventListener("lostpointercapture", cancelarCargaPotencia);
+    window.addEventListener("blur", cancelarCargaPotencia);
+    botonAccion.addEventListener("keydown", function(evento) {
+        if (fase !== "kick" || ![" ", "Enter"].includes(evento.key) || evento.repeat) return;
+        evento.preventDefault();
+        iniciarCargaPotencia();
+    });
+    botonAccion.addEventListener("keyup", function(evento) {
+        if (fase !== "kick" || ![" ", "Enter"].includes(evento.key)) return;
+        evento.preventDefault();
+        soltarCargaPotencia();
+    });
+    botonAccion.addEventListener("click", function(evento) {
+        if (ignorarClickSiguiente) {
+            ignorarClickSiguiente = false;
+            evento.preventDefault();
+            return;
+        }
+        if (fase === "defend") {
+            evento.preventDefault();
+            finalizarAccion(puntoElegido, 0, Number(apuestaInput.value));
+        }
+    });
+
+    apuestaInput.addEventListener("input", actualizarEstado);
+
+    reiniciar.addEventListener("click", function() {
+        let cuenta = cuentaActual();
+        if (!cuenta || puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA || !tandaTerminada || resolviendoTiro) return;
+        indicadoresGoles.concat(indicadoresAtajadas).forEach(function(indicador, indice) {
+            indicador.classList.remove("is-success", "is-failure");
+            let numeroTiro = indice % 3 + 1;
+            indicador.textContent = String(numeroTiro);
+            indicador.setAttribute("aria-label", (indice < 3 ? "Penal " : "Atajada ") +
+                numeroTiro + " pendiente");
+        });
+        tirosRealizados = 0;
+        goles = 0;
+        atajadas = 0;
+        fase = "kick";
+        tandaTerminada = false;
+        tandaIniciada = false;
+        detenerCargaPotencia();
+        limpiarAnimacion();
+        colocarObjetivo(50, 48);
+        colocarArquero({ x: 50, y: 48 }, false);
+        pelota.style.left = "50%";
+        pelota.style.top = "87%";
+        avance.textContent = "Empieza la tanda: patea tres veces y ataja tres.";
+        actualizarEstado();
+    });
+
+    let cuenta = cuentaActual();
+    avance.textContent = !cuenta
+        ? "Inicia sesión para comenzar una tanda."
+        : puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA
+            ? "Alcanzaste el límite de puntos; los juegos están bloqueados."
+            : "Toca cualquier punto del arco, carga la potencia y luego defiende tres tiros.";
+    actualizarEstado();
+}
+
+function iniciarChatChichaCook() {
+    if (document.getElementById("chichacook-chat")) return;
+
+    let lanzador = document.createElement("button");
+    lanzador.className = "chat-launcher";
+    lanzador.type = "button";
+    lanzador.setAttribute("aria-expanded", "false");
+    lanzador.setAttribute("aria-controls", "chichacook-chat");
+    lanzador.setAttribute("aria-label", "Abrir chat de ChichaCook");
+    lanzador.innerHTML = "<span class=\"chat-launcher-icon\" aria-hidden=\"true\">✦</span><span>Bot ChichaCook</span>";
+
+    let chat = document.createElement("section");
+    chat.id = "chichacook-chat";
+    chat.className = "chat-panel";
+    chat.setAttribute("role", "region");
+    chat.setAttribute("aria-label", "Chat de ayuda ChichaCook");
+    chat.hidden = true;
+    chat.innerHTML =
+        "<div class=\"chat-heading\"><div class=\"chat-agent-avatar\" aria-hidden=\"true\">✦</div>" +
+        "<div class=\"chat-agent-title\"><p>CHICHACOOK · ASISTENTE LOCAL</p><h2 id=\"chat-title\">¿En qué te ayudo?</h2></div>" +
+        "<button type=\"button\" class=\"chat-close\" aria-label=\"Cerrar chat\">&times;</button></div>" +
+        "<div class=\"chat-toolbar\"><span>Información de las páginas del sitio</span>" +
+        "<button type=\"button\" class=\"chat-clear\" aria-label=\"Borrar el historial de este chat\">Borrar historial</button></div>" +
+        "<div class=\"chat-messages\" role=\"log\" aria-live=\"polite\" aria-relevant=\"additions\"></div>" +
+        "<p id=\"chat-status\" class=\"chat-status\" role=\"status\" aria-live=\"polite\"></p>" +
+        "<form class=\"chat-form\"><label for=\"chat-input\">Escribe tu pregunta</label>" +
+        "<div><input id=\"chat-input\" name=\"message\" maxlength=\"240\" autocomplete=\"off\" placeholder=\"Ej.: ¿Cuánto cuesta la chicha?\" required>" +
+        "<button type=\"submit\">Enviar</button></div></form>" +
+        "<p class=\"chat-disclaimer\">Bot local basado en datos del sitio. No envía tus mensajes a una IA externa.</p>";
+    document.body.append(lanzador, chat);
+
+    let formulario = chat.querySelector(".chat-form");
+    let campo = document.getElementById("chat-input");
+    let mensajes = chat.querySelector(".chat-messages");
+    let estadoChat = document.getElementById("chat-status");
+    let botonBorrar = chat.querySelector(".chat-clear");
+    let cuenta = obtenerCuentaSesion();
+    let claveHistorial = cuenta
+        ? "chichacookChatHistory:" + normalizarIdentificador(cuenta.username)
+        : null;
+    let historial = [];
+    let historialLegible = true;
+    let historialInicial = [
+        {
+            role: "bot",
+            text: "¡Hola! Soy el bot de ChichaCook. Puedo orientarte sobre el menú, pedidos, juegos, puntos, recompensas y contacto."
+        }
+    ];
+    let conocimiento = [
+        {
+            claves: ["precio", "precios", "cuesta", "cuanto vale", "vale", "costo", "costar", "valor", "1.200", "1200", "oreo", "m&m", "chispas", "topping", "toppings", "galleta", "chicha", "menu", "venden", "productos", "producto", "ofrecen", "ofrece"],
+            respuesta: "La chicha venezolana cuesta $1.200 e incluye una galleta y dos toppings. Puedes elegir Oreo, M&M o chispas de chocolate. Un topping extra cuesta $200. Revisa Servicios para armar tu pedido."
+        },
+        {
+            claves: ["pedido", "pedir", "comprar", "carrito", "agregar", "como funciona", "orden"],
+            respuesta: "Para pedir, entra a Servicios, elige hasta dos toppings, selecciona si quieres un extra y agrégalo al carrito. La página indica que el pedido se revisa desde el carrito."
+        },
+        {
+            claves: ["pago", "pagar", "efectivo", "tarjeta"],
+            respuesta: "El sitio presenta un flujo de compra de demostración. No procesa pagos reales; revisa las opciones visibles en el carrito antes de continuar."
+        },
+        {
+            claves: ["premio", "premios", "recompensa", "recompensas", "canjear", "canje"],
+            respuesta: "En Videojuego puedes canjear una chicha gratis por 15.000 puntos o un topping extra gratis por 10.000 puntos. Cada recompensa se puede canjear una vez por cuenta."
+        },
+        {
+            claves: ["puntos", "punto", "limite", "límite", "15.000", "15000", "bono", "3000"],
+            respuesta: "Al iniciar sesión por primera vez se entrega un bono único de bienvenida de hasta 3.000 puntos. El máximo acumulado de puntos ganados es 15.000 por cuenta; al alcanzarlo se bloquean los juegos, pero puedes canjear recompensas."
+        },
+        {
+            claves: ["juego", "juegos", "blackjack", "ruleta", "penales", "apuesta", "apostar"],
+            respuesta: "La página Videojuego tiene blackjack, ruleta y una tanda de penales. Las apuestas del sitio usan puntos virtuales, no dinero real. Los juegos se bloquean al llegar a 15.000 puntos ganados por cuenta."
+        },
+        {
+            claves: ["como jugar penales", "tanda de penales", "patear", "atajar", "penal"],
+            respuesta: "En la tanda, elige izquierda, centro o derecha. Para patear, mantén presionado el botón y suéltalo al nivel de potencia que quieras; para atajar, elige la dirección y pulsa «Atajar». Puedes apostar puntos virtuales en cada acción; 0 juega sin apuesta."
+        },
+        {
+            claves: ["como jugar blackjack", "blackjack", "21", "pedir carta", "plantarse", "doblar apuesta"],
+            respuesta: "En blackjack defines una apuesta y luego puedes pedir carta, doblar la apuesta o plantarte. El objetivo es acercarte a 21 sin pasarte. Se juega con puntos virtuales."
+        },
+        {
+            claves: ["como jugar ruleta", "ruleta", "ruleta americana", "girar", "casilla"],
+            respuesta: "En la ruleta americana, elige un número o una apuesta externa y añade los puntos. La página inicia una cuenta de 20 segundos antes de mostrar el resultado. Se juega con puntos virtuales."
+        },
+        {
+            claves: ["cuenta", "registro", "registrarse", "iniciar sesion", "iniciar sesión", "contraseña", "progreso"],
+            respuesta: "Puedes crear una cuenta desde Registrarse o entrar desde Iniciar sesión. El progreso se guarda en el navegador de este dispositivo; no se sincroniza automáticamente con otros dispositivos."
+        },
+        {
+            claves: ["contacto", "correo", "email", "whatsapp", "telefono", "teléfono", "instagram", "tiktok", "redes", "sociales", "direccion", "dirección", "ubicacion", "ubicación", "tienda", "local"],
+            respuesta: "Contacto: gdeporte72@gmail.com, WhatsApp +56 9 5234 6726, Instagram, TikTok y X @chichacook. La página Contacto indica Av. Alameda Libertador Bernardo O'Higgins 3250, Estación Central, Región Metropolitana, Chile."
+        },
+        {
+            claves: ["equipo", "nosotros", "personas", "ceo", "quienes"],
+            respuesta: "En Nosotros se presenta al equipo: Yoneiker Blanco (CEO), Deiby Moreno (Director de contratos), Aarón Gutierrez (Asistente), Yael Amari (Comercial) y Sandra Haro (Contable)."
+        },
+        {
+            claves: ["historial", "chat", "conversacion", "conversación"],
+            respuesta: "Si iniciaste sesión, el historial de este chat se guarda en el almacenamiento local de esta cuenta en este navegador. Usa «Borrar historial» para eliminarlo. No se sincroniza con otros dispositivos."
+        }
+    ];
+
+    function normalizarTexto(texto) {
+        return texto.normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/&/g, " y ")
+            .replace(/[^\w\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function leerHistorial() {
+        if (!claveHistorial) return [];
+        try {
+            let guardado = JSON.parse(localStorage.getItem(claveHistorial) || "[]");
+            if (!Array.isArray(guardado)) throw new Error("El historial no tiene el formato esperado.");
+            return guardado.filter(function(mensaje) {
+                return mensaje && ["user", "bot"].includes(mensaje.role) &&
+                    typeof mensaje.text === "string" && mensaje.text.length <= 1000;
+            }).slice(-80);
+        } catch (error) {
+            historialLegible = false;
+            estadoChat.textContent = "No se pudo leer el historial guardado. Puedes borrarlo para iniciar uno nuevo.";
+            console.error("No se pudo leer el historial del bot ChichaCook.", error);
+            return [];
+        }
+    }
+
+    function guardarHistorial() {
+        if (!claveHistorial) {
+            estadoChat.textContent = "Inicia sesión para guardar tu conversación en esta cuenta.";
+            return false;
+        }
+        try {
+            localStorage.setItem(claveHistorial, JSON.stringify(historial.slice(-80)));
+            estadoChat.textContent = "Conversación guardada en esta cuenta y este navegador.";
+            return true;
+        } catch (error) {
+            estadoChat.textContent = "No se pudo guardar el chat. Comprueba el espacio disponible del navegador.";
+            console.error("No se pudo guardar el historial del bot ChichaCook.", error);
+            return false;
+        }
+    }
+
+    function renderizarHistorial() {
+        mensajes.replaceChildren();
+        let conversacion = historialInicial.concat(historial);
+        conversacion.forEach(function(mensaje) {
+            let burbuja = document.createElement("p");
+            burbuja.className = "chat-bubble " + (mensaje.role === "user" ? "is-user" : "is-bot");
+            burbuja.textContent = mensaje.text;
+            mensajes.append(burbuja);
+        });
+        mensajes.scrollTop = mensajes.scrollHeight;
+    }
+
+    function cerrarChat() {
+        chat.hidden = true;
+        lanzador.setAttribute("aria-expanded", "false");
+        lanzador.focus();
+    }
+
+    function responder(pregunta) {
+        let texto = normalizarTexto(pregunta);
+        if (/^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey)$/.test(texto)) {
+            return "¡Hola! ¿Quieres saber sobre el menú, tu pedido, los puntos, los juegos o las recompensas?";
+        }
+        if (/(mis puntos|mi saldo|cuantos puntos tengo|cuantos puntos me quedan|saldo de puntos)/.test(texto)) {
+            let cuentaActual = obtenerCuentaSesion();
+            return cuentaActual
+                ? "Tu saldo actual es de " + puntosCuenta(cuentaActual).toLocaleString("es-CL") +
+                    " puntos. Has ganado " + puntosGanadosCuenta(cuentaActual).toLocaleString("es-CL") +
+                    " de los 15.000 permitidos por cuenta."
+                : "Inicia sesión para consultar el saldo de puntos de tu cuenta.";
+        }
+
+        let tokensIgnorados = new Set([
+            "como", "donde", "cuando", "cuanto", "quien", "quiero", "puedes", "tiene",
+            "hay", "para", "por", "una", "uno", "los", "las", "del", "al", "con",
+            "me", "es", "el", "la", "de", "y", "en", "mi", "un", "se", "si", "a",
+            "que", "cual", "cuales", "sobre", "favor", "hola", "dime", "saber"
+        ]);
+        let tokens = texto.split(" ").filter(function(token) {
+            return token.length > 2 && !tokensIgnorados.has(token);
+        });
+        let textoDelimitado = " " + texto + " ";
+        let resultados = conocimiento.map(function(articulo) {
+            let clavesNormalizadas = articulo.claves.map(normalizarTexto);
+            let puntaje = clavesNormalizadas.reduce(function(total, clave) {
+                return total + (textoDelimitado.includes(" " + clave + " ")
+                    ? (clave.includes(" ") ? 4 : 3)
+                    : 0);
+            }, 0);
+            tokens.forEach(function(token) {
+                if (clavesNormalizadas.includes(token)) puntaje += 1;
+            });
+            return { puntaje: puntaje, respuesta: articulo.respuesta };
+        }).filter(function(resultado) {
+            return resultado.puntaje > 0;
+        }).sort(function(a, b) {
+            return b.puntaje - a.puntaje;
+        });
+
+        if (!resultados.length) {
+            return "No encuentro ese dato en las páginas de ChichaCook y prefiero no inventarlo. Puedo ayudarte con el menú y precios, pedidos, juegos, puntos, recompensas, equipo o contacto.";
+        }
+        let puntajeMaximo = resultados[0].puntaje;
+        return resultados.filter(function(resultado, indice) {
+            return indice < 2 && resultado.puntaje >= puntajeMaximo - 1;
+        }).map(function(resultado) {
+            return resultado.respuesta;
+        }).join("\n\n");
+    }
+
+    historial = leerHistorial();
+    renderizarHistorial();
+    botonBorrar.disabled = !claveHistorial;
+    if (!claveHistorial) {
+        estadoChat.textContent = "Inicia sesión para guardar el historial de tu cuenta.";
+    } else if (historialLegible && historial.length) {
+        estadoChat.textContent = "Se cargó tu conversación guardada en este navegador.";
+    }
+
+    lanzador.addEventListener("click", function() {
+        chat.hidden = false;
+        lanzador.setAttribute("aria-expanded", "true");
+        campo.focus();
+    });
+    chat.querySelector(".chat-close").addEventListener("click", cerrarChat);
+    botonBorrar.addEventListener("click", function() {
+        if (!claveHistorial) {
+            estadoChat.textContent = "Inicia sesión para administrar el historial de tu cuenta.";
+            return;
+        }
+        try {
+            localStorage.removeItem(claveHistorial);
+            historial = [];
+            historialLegible = true;
+            renderizarHistorial();
+            estadoChat.textContent = "Historial eliminado de esta cuenta en este navegador.";
+        } catch (error) {
+            estadoChat.textContent = "No se pudo eliminar el historial. Inténtalo nuevamente.";
+            console.error("No se pudo eliminar el historial del bot ChichaCook.", error);
+        }
+    });
+    formulario.addEventListener("submit", function(evento) {
+        evento.preventDefault();
+        let pregunta = campo.value.trim();
+        if (!pregunta) return;
+        if (!historialLegible) {
+            estadoChat.textContent = "Borra el historial ilegible antes de guardar una conversación nueva.";
+            return;
+        }
+        historial.push({ role: "user", text: pregunta });
+        historial.push({ role: "bot", text: responder(pregunta) });
+        historial = historial.slice(-80);
+        renderizarHistorial();
+        if (claveHistorial) guardarHistorial();
+        campo.value = "";
+        campo.focus();
+    });
+    document.addEventListener("keydown", function(evento) {
+        if (evento.key === "Escape" && !chat.hidden) cerrarChat();
+    });
+}
+
 iniciarBlackjack();
 iniciarRuleta();
+iniciarJuegoPenales();
+iniciarChatChichaCook();
 actualizarNavegacionSesion();
 actualizarCantidad();
 let parametrosServicios = new URLSearchParams(window.location.search);
-if (document.querySelector(".pedido") && parametrosServicios.get("agregarPendiente") === "1" && obtenerCuentaSesion()) {
+if (document.querySelector(".services-page") && parametrosServicios.get("agregarPendiente") === "1" && obtenerCuentaSesion()) {
     let productoPendiente;
     try {
         productoPendiente = JSON.parse(sessionStorage.getItem("chichacookPendingProduct") || "null");
@@ -2259,17 +3276,22 @@ if (document.querySelector(".pedido") && parametrosServicios.get("agregarPendien
     if (productoPendiente && opcionesToppingValidas.includes(productoPendiente.topping1) &&
         opcionesToppingValidas.includes(productoPendiente.topping2) &&
         opcionesToppingValidas.includes(productoPendiente.extra)) {
-        carrito.push({
+        let productoAgregado = {
             nombre: "Chicha venezolana",
             toppings: productoPendiente.topping1 + ", " + productoPendiente.topping2,
             extra: productoPendiente.extra,
             precio: productoPendiente.extra === "Ninguno" ? 1200 : 1400
-        });
-        guardarCarrito();
-        actualizarCantidad();
+        };
+        carrito.push(productoAgregado);
+        if (!guardarCarrito()) {
+            carrito.pop();
+            mostrarAviso("No se pudo recuperar el producto en el carrito. Vuelve a Servicios e inténtalo de nuevo.", "error");
+        } else {
+            actualizarCantidad();
+        }
     }
 }
-if (document.querySelector(".pedido") && parametrosServicios.get("abrirCarrito") === "1") {
+if (document.querySelector(".services-page") && parametrosServicios.get("abrirCarrito") === "1") {
     mostrarCarrito();
 }
 let puntosRecompensa = document.getElementById("reward-points");

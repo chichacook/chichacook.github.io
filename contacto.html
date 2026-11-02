@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/jpeg" href="imagenes/ChichaCook.png">
+    <link rel="icon" type="image/png" href="imagenes/ChichaCook.png">
     <title>Contacto - ChichaCook</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -12,7 +12,7 @@
 
 <header>
     <a class="logo" href="index.html" aria-label="ChichaCook, inicio">
-        <img src="imagenes/ChichaCook.png" alt="Logotipo de ChichaCook">
+        <img src="imagenes/ChichaCook.png" alt="Logotipo de ChichaCook" decoding="async">
         <span class="logo-name"><span>CHICHA</span><span class="logo-accent">COOK</span></span>
     </a>
 
@@ -33,7 +33,7 @@
             <a href="login.html">Iniciar sesión</a>
             <a href="registrarse.html">Registrarse</a>
         </nav>
-        <button type="button" onclick="mostrarCarrito()" aria-label="Mostrar carrito" aria-expanded="false">🛒 <b id="cantidad">0</b></button>
+        <button type="button" onclick="mostrarCarrito()" aria-label="Mostrar carrito" aria-expanded="false"><span class="cart-icon" aria-hidden="true">🛒</span><b id="cantidad">0</b></button>
     </div>
 </header>
 
@@ -67,9 +67,9 @@
             <aside class="contact-info-panel" aria-labelledby="contact-info-title">
                 <p class="services-eyebrow">RESPUESTA DIRECTA</p>
                 <h2 id="contact-info-title">Conecta con nosotros</h2>
-                <a class="contact-channel" href="https://wa.me/56952346726" target="_blank" rel="noopener noreferrer">
-                    <span>WhatsApp</span><strong>+56 9 5234 6726</strong><span aria-hidden="true">↗</span>
-                </a>
+                <div class="contact-channel contact-channel-static">
+                    <span>WhatsApp</span><strong>+56 9 5234 6726</strong>
+                </div>
                 <div class="contact-channel contact-channel-static">
                     <span>Instagram</span><strong>@chichacook</strong>
                 </div>
@@ -78,6 +78,9 @@
                 </div>
                 <div class="contact-channel contact-channel-static">
                     <span>X</span><strong>@chichacook</strong>
+                </div>
+                <div class="contact-channel contact-channel-static">
+                    <span>Correo</span><strong>gdeporte72@gmail.com</strong>
                 </div>
             </aside>
 
@@ -101,8 +104,8 @@
 
 <footer class="site-footer">
     <a class="footer-brand" href="index.html">CHICHA<span>COOK</span></a>
-    <p>El sabor venezolano siempre encuentra su lugar <span class="bandera-venezuela" role="img" aria-label="Bandera de Venezuela"></span></p>
-    <small>© ChichaCook</small>
+    <p>El sabor venezolano siempre encuentra su lugar. <span class="bandera-venezuela" role="img" aria-label="Bandera de Venezuela"></span></p>
+    <small>© 2026 ChichaCook · Hecho con cariño</small>
 </footer>
 
 <div id="carrito" class="carrito"></div>
