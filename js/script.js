@@ -656,6 +656,10 @@ function actualizarAvisoLimiteJuegos(cuenta) {
     }
 }
 
+function notificarCambioPuntos() {
+    document.dispatchEvent(new Event("chichacook:points-changed"));
+}
+
 function cambiarPuntosSesion(cambio, gananciaNeta) {
     let usuarioSesion = sessionStorage.getItem("chichacookSession");
     if (!usuarioSesion) return null;
@@ -687,6 +691,7 @@ function cambiarPuntosSesion(cambio, gananciaNeta) {
         elemento.setAttribute("aria-label", cuenta.puntos.toLocaleString("es-CL") + " puntos disponibles");
     });
     actualizarAvisoLimiteJuegos(cuenta);
+    notificarCambioPuntos();
     return cuenta.puntos;
 }
 
@@ -718,6 +723,7 @@ function actualizarNavegacionSesion() {
 
     let notaInicio = document.getElementById("home-account-note");
     let enlacesCuentaInicio = document.querySelector(".home-account-links");
+    let notaServicios = document.querySelector(".services-login-note");
     if (notaInicio) {
         if (cuenta) {
             notaInicio.textContent = "¡Qué bueno verte, " + (cuenta.displayName || usuario) +
@@ -728,8 +734,10 @@ function actualizarNavegacionSesion() {
             notaInicio.classList.remove("is-signed-in");
         }
     }
+    if (notaServicios) notaServicios.hidden = Boolean(cuenta);
     if (enlacesCuentaInicio) enlacesCuentaInicio.hidden = Boolean(cuenta);
     actualizarAvisoLimiteJuegos(cuenta);
+    notificarCambioPuntos();
 }
 
 function cerrarSesion() {
@@ -943,8 +951,8 @@ function iniciarBlackjack() {
         botonPlantarse.disabled = !partidaActiva;
         botonDoblar.disabled = !partidaActiva || juegosBloqueados || repartiendo || turnoDoblado || manoJugador.length !== 2 ||
             !cuenta || puntosCuenta(cuenta) < apuestaActual;
-        botonNueva.disabled = partidaActiva || repartiendo || juegosBloqueados;
-        apuestaInput.disabled = partidaActiva || repartiendo || juegosBloqueados;
+        botonNueva.disabled = !cuenta || partidaActiva || repartiendo || juegosBloqueados;
+        apuestaInput.disabled = !cuenta || partidaActiva || repartiendo || juegosBloqueados;
         puntosJugador.textContent = cuenta
             ? puntosCuenta(cuenta).toLocaleString("es-CL")
             : "Inicia sesión";
@@ -1266,9 +1274,14 @@ function iniciarBlackjack() {
     });
 
     botonNueva.addEventListener("click", nuevaPartida);
+    document.addEventListener("chichacook:points-changed", function() {
+        actualizarMesa(!partidaActiva);
+    });
     if (!restaurarPartidaBlackjack()) {
         actualizarMesa(false);
-        mostrarMensaje("Elige tu apuesta y pulsa «Nueva partida» para repartir.", "");
+        mostrarMensaje(obtenerCuentaSesion()
+            ? "Elige tu apuesta y pulsa «Nueva partida» para repartir."
+            : "Inicia sesión para jugar blackjack con puntos virtuales.", "");
     }
 }
 
@@ -1829,18 +1842,18 @@ function iniciarRuleta() {
         totalApuestaTexto.textContent = "Total apostado: " + total.toLocaleString("es-CL") +
             " puntos · Saldo restante: " + restante.toLocaleString("es-CL");
         botonLimpiarApuestas.disabled = girando || apuestasPendientes.length === 0;
-        botonAgregarApuesta.disabled = girando || juegosBloqueados;
+        botonAgregarApuesta.disabled = girando || !cuenta || juegosBloqueados;
         botonDeshacerApuesta.disabled = girando || apuestasPendientes.length === 0;
-        botonApuestaMaxima.disabled = girando || juegosBloqueados || restante === 0;
+        botonApuestaMaxima.disabled = girando || !cuenta || juegosBloqueados || restante === 0;
         fichasRapidas.forEach(function(ficha) {
-            ficha.disabled = girando || juegosBloqueados;
+            ficha.disabled = girando || !cuenta || juegosBloqueados;
         });
-        apuestaInput.disabled = girando || juegosBloqueados;
+        apuestaInput.disabled = girando || !cuenta || juegosBloqueados;
         opciones.forEach(function(opcion) {
-            opcion.disabled = girando || juegosBloqueados;
+            opcion.disabled = girando || !cuenta || juegosBloqueados;
         });
         botonesCasilla.forEach(function(boton) {
-            boton.disabled = girando || juegosBloqueados;
+            boton.disabled = girando || !cuenta || juegosBloqueados;
         });
         apuestaInput.max = String(restante);
         if (apuestasPendientes.length === 0 && temporizadorApuesta !== null) {
@@ -1850,8 +1863,8 @@ function iniciarRuleta() {
 
     function cambiarEstadoControles(bloqueado) {
         let cuenta = obtenerCuentaSesion();
-        let deshabilitado = bloqueado || (cuenta &&
-            puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA);
+        let deshabilitado = bloqueado || !cuenta ||
+            puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA;
         apuestaInput.disabled = deshabilitado;
         botonAgregarApuesta.disabled = deshabilitado;
         botonDeshacerApuesta.disabled = bloqueado || apuestasPendientes.length === 0;
@@ -1887,6 +1900,13 @@ function iniciarRuleta() {
     aroRuleta.classList.add("is-idle");
     ajustarRadioRueda();
     window.addEventListener("resize", ajustarRadioRueda);
+    if (!obtenerCuentaSesion()) {
+        mostrarMensaje("Inicia sesión para jugar a la ruleta con puntos virtuales.", "");
+    }
+    document.addEventListener("chichacook:points-changed", function() {
+        actualizarSaldo();
+        actualizarApuestas();
+    });
 
     function ajustarRadioRueda() {
         let radio = rueda.clientWidth / 2 - 33;
@@ -2489,6 +2509,8 @@ function iniciarJuegoPenales() {
     let tandaTerminada = false;
     let tandaIniciada = false;
     let resolviendoTiro = false;
+    let temporizadorAccionAutomatica = null;
+    let segundosAccionAutomatica = 0;
     let potencia = 0;
     let intervaloPotencia = null;
     let cargandoPotencia = false;
@@ -2678,6 +2700,38 @@ function iniciarJuegoPenales() {
         actualizarPotencia(0);
     }
 
+    function cancelarAccionAutomatica() {
+        if (temporizadorAccionAutomatica !== null) {
+            window.clearInterval(temporizadorAccionAutomatica);
+            temporizadorAccionAutomatica = null;
+        }
+        segundosAccionAutomatica = 0;
+    }
+
+    function programarAccionAutomatica() {
+        cancelarAccionAutomatica();
+        segundosAccionAutomatica = 3;
+        avance.textContent = "El tiro se resolverá en 3 segundos. Puedes cambiar la dirección para reiniciar el conteo.";
+        temporizadorAccionAutomatica = window.setInterval(function() {
+            segundosAccionAutomatica--;
+            if (segundosAccionAutomatica > 0) {
+                avance.textContent = "El tiro se resolverá en " + segundosAccionAutomatica +
+                    " segundos. Puedes cambiar la dirección para reiniciar el conteo.";
+                actualizarEstado();
+                return;
+            }
+            cancelarAccionAutomatica();
+            let cuenta = cuentaActual();
+            let importe = cuenta ? leerApuesta(cuenta) : null;
+            if (cuenta && importe !== null) {
+                finalizarAccion(puntoElegido, fase === "kick" ? Math.max(potencia, 65) : 0, importe);
+            } else {
+                actualizarEstado();
+            }
+        }, 1000);
+        actualizarEstado();
+    }
+
     function actualizarEstado() {
         let cuenta = cuentaActual();
         let limiteAlcanzado = cuenta && puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA;
@@ -2707,27 +2761,49 @@ function iniciarJuegoPenales() {
         });
         reiniciar.disabled = !cuenta || !tandaTerminada || Boolean(limiteAlcanzado);
         botonAccion.disabled = !cuenta || bloqueoPorLimite || tandaTerminada || resolviendoTiro ||
-            importeApuesta === null;
-        botonAccion.textContent = fase === "kick"
-            ? (cargandoPotencia ? "Suelta para patear" : "Mantén para cargar potencia")
-            : "Atajar en el punto elegido";
-        botonAccion.setAttribute("aria-label", fase === "kick"
-            ? "Mantén presionado y suelta para patear con la potencia elegida"
-            : "Lanzarte al punto elegido para intentar atajar");
+            importeApuesta === null || temporizadorAccionAutomatica !== null;
+        let textoAccion = temporizadorAccionAutomatica !== null
+            ? "Tiro en " + segundosAccionAutomatica + " s"
+            : !cuenta
+            ? "Inicia sesión"
+            : bloqueoPorLimite
+                ? "Límite alcanzado"
+                : tandaTerminada
+                    ? "Tanda completa"
+                    : fase === "kick"
+                        ? (cargandoPotencia ? "Suelta para patear" : "Mantén para cargar potencia")
+                        : "Atajar en el punto elegido";
+        botonAccion.textContent = textoAccion;
+        botonAccion.setAttribute("aria-label", temporizadorAccionAutomatica !== null
+            ? "Tiro automático en " + segundosAccionAutomatica + " segundos"
+            : !cuenta
+            ? "Inicia sesión para comenzar una tanda de penales"
+            : bloqueoPorLimite
+                ? "Alcanzaste el límite de puntos para jugar"
+                : tandaTerminada
+                    ? "La tanda de penales está completa"
+                    : fase === "kick"
+                        ? "Mantén presionado y suelta para patear con la potencia elegida"
+                        : "Lanzarte al punto elegido para intentar atajar");
         controlPotencia.hidden = fase !== "kick";
-        actualizarPotencia(0);
+        actualizarPotencia(temporizadorAccionAutomatica !== null && fase === "kick" ? 65 : 0);
         let puedeTocarArco = window.matchMedia("(hover: none), (pointer: coarse)").matches;
         faseTexto.textContent = tandaTerminada
             ? "Tanda completa: revisa tus tres tiros y tus tres atajadas."
+            : temporizadorAccionAutomatica !== null
+                ? "Prepárate: el " + (fase === "kick" ? "penal" : "tiro del rival") +
+                    " se realizará en " + segundosAccionAutomatica + " segundos."
             : fase === "kick"
-                ? (puedeTocarArco ? "Toca el arco o usa las flechas para apuntar. Mantén el botón para cargar y suelta para patear."
-                    : "Elige izquierda, centro o derecha con las flechas. Mantén el botón para cargar y suelta para patear.")
-                : (puedeTocarArco ? "Toca el arco o usa las flechas para elegir dónde atajar."
-                    : "Elige izquierda, centro o derecha con las flechas y pulsa «Atajar».");
+                ? (puedeTocarArco ? "Elige dónde patear tocando una flecha o el arco; el penal se resuelve automáticamente en 3 segundos."
+                    : "Elige izquierda, centro o derecha; el penal se resuelve automáticamente en 3 segundos.")
+                : (puedeTocarArco ? "Elige dónde atajar tocando una flecha o el arco; el rival tira en 3 segundos."
+                    : "Elige izquierda, centro o derecha; el rival tira automáticamente en 3 segundos.");
         actualizarSeleccion();
         actualizarMarcador();
         actualizarAvisoLimiteJuegos(cuenta);
     }
+
+    document.addEventListener("chichacook:points-changed", actualizarEstado);
 
     function finalizarAccion(puntoSeleccionado, potenciaTiro, importeApuesta) {
         let cuenta = cuentaActual();
@@ -2904,6 +2980,7 @@ function iniciarJuegoPenales() {
         avance.textContent = fase === "kick"
             ? "Apuntaste " + describirPunto(puntoElegido) + ". Mantén el botón para cargar y soltar para patear."
             : "Te lanzarás " + describirPunto(puntoElegido) + ". Pulsa Atajar para confirmar.";
+        programarAccionAutomatica();
     });
 
     arco.addEventListener("keydown", function(evento) {
@@ -2955,7 +3032,7 @@ function iniciarJuegoPenales() {
             ? "Apuntaste al " + (direccion === "center" ? "centro" : direccion === "left" ? "lado izquierdo" : "lado derecho") +
                 ". Mantén el botón para cargar y soltar para patear."
             : "Te lanzarás al " + (direccion === "center" ? "centro" : direccion === "left" ? "lado izquierdo" : "lado derecho") + ".";
-        actualizarEstado();
+        programarAccionAutomatica();
     }
 
     controlesDireccion.forEach(function(control) {
@@ -3105,15 +3182,15 @@ function iniciarChatChichaCook() {
             respuesta: "La página Videojuego tiene blackjack, ruleta y una tanda de penales. Las apuestas del sitio usan puntos virtuales, no dinero real. Los juegos se bloquean al llegar a 15.000 puntos ganados por cuenta."
         },
         {
-            claves: ["como jugar penales", "tanda de penales", "patear", "atajar", "penal"],
-            respuesta: "En la tanda, elige izquierda, centro o derecha. Para patear, mantén presionado el botón y suéltalo al nivel de potencia que quieras; para atajar, elige la dirección y pulsa «Atajar». Puedes apostar puntos virtuales en cada acción; 0 juega sin apuesta."
+            claves: ["como jugar penales", "como jugar a los penales", "como juego penales", "como se juega penales", "como se juegan los penales", "como se juega la tanda de penales", "tanda de penales", "patear", "atajar", "penal"],
+            respuesta: "En la tanda de penales elige izquierda, centro o derecha; después de cada elección tienes 3 segundos para cambiar la dirección antes de que el tiro se resuelva automáticamente contra la máquina. Puedes apostar puntos virtuales en cada tiro o jugar sin apuesta."
         },
         {
-            claves: ["como jugar blackjack", "blackjack", "21", "pedir carta", "plantarse", "doblar apuesta"],
+            claves: ["como jugar blackjack", "como jugar al blackjack", "como juego blackjack", "como juego al blackjack", "como se juega blackjack", "como se juega al blackjack", "como se juega el blackjack", "reglas de blackjack", "blackjack", "21", "pedir carta", "plantarse", "doblar apuesta"],
             respuesta: "En blackjack defines una apuesta y luego puedes pedir carta, doblar la apuesta o plantarte. El objetivo es acercarte a 21 sin pasarte. Se juega con puntos virtuales."
         },
         {
-            claves: ["como jugar ruleta", "ruleta", "ruleta americana", "girar", "casilla"],
+            claves: ["como jugar ruleta", "como jugar a la ruleta", "como juego ruleta", "como juego la ruleta", "como se juega ruleta", "como se juega la ruleta", "reglas de ruleta", "ruleta", "ruleta americana", "girar", "casilla"],
             respuesta: "En la ruleta americana, elige un número o una apuesta externa y añade los puntos. La página inicia una cuenta de 20 segundos antes de mostrar el resultado. Se juega con puntos virtuales."
         },
         {
@@ -3223,7 +3300,7 @@ function iniciarChatChichaCook() {
             let clavesNormalizadas = articulo.claves.map(normalizarTexto);
             let puntaje = clavesNormalizadas.reduce(function(total, clave) {
                 return total + (textoDelimitado.includes(" " + clave + " ")
-                    ? (clave.includes(" ") ? 4 : 3)
+                    ? (clave.includes(" ") ? 12 : 3)
                     : 0);
             }, 0);
             tokens.forEach(function(token) {

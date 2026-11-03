@@ -4716,6 +4716,10 @@ footer {
     display: none;
 }
 
+.services-login-note[hidden] {
+    display: none;
+}
+
 .home-account-note.is-signed-in {
     color: #176244;
     font-weight: bold;
@@ -6521,5 +6525,92 @@ body.cart-open {
     .penalty-spot {
         transition: none;
         animation: none !important;
+    }
+}
+
+@media (min-width: 320px) and (max-width: 700px) {
+    .penalty-play-area {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+            "direction direction"
+            "phase phase"
+            "pitch pitch"
+            "bet bet"
+            "progress power"
+            "action reset"
+            "shooter shooter"
+            "keeper keeper";
+    }
+
+    .penalty-pitch {
+        grid-area: pitch;
+    }
+
+    .penalty-controls {
+        display: contents;
+    }
+
+    .penalty-shooter-picker { grid-area: shooter; }
+    .penalty-keeper-picker { grid-area: keeper; }
+    .penalty-controls > .penalty-bet-card { grid-area: bet; }
+    .penalty-controls > .penalty-phase { grid-area: phase; }
+    .penalty-controls > .penalty-direction-controls { grid-area: direction; }
+    .penalty-controls > .penalty-progress { grid-area: progress; }
+    .penalty-controls > .penalty-power { grid-area: power; }
+    .penalty-controls > #penalty-action { grid-area: action; }
+    .penalty-controls > #penalty-reset { grid-area: reset; }
+
+    .penalty-action,
+    .penalty-reset {
+        min-width: 0;
+        padding-right: 8px;
+        padding-left: 8px;
+        margin: 0;
+    }
+}
+
+@media (min-width: 480px) and (max-width: 700px) {
+    .penalty-play-area {
+        grid-template-areas:
+            "direction direction"
+            "phase phase"
+            "pitch pitch"
+            "bet bet"
+            "progress power"
+            "action reset"
+            "shooter keeper";
+    }
+
+    .penalty-shooter-picker,
+    .penalty-keeper-picker {
+        min-width: 0;
+        padding: 12px;
+    }
+
+    .penalty-shooter-picker select,
+    .penalty-keeper-picker select {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 700px) {
+    .penalty-pitch {
+        height: clamp(340px, 96vw, 390px);
+    }
+
+    .penalty-action,
+    .penalty-reset {
+        min-height: 48px;
+        padding: 6px 8px;
+        font-size: 14px;
+        line-height: 1.2;
+    }
+}
+
+@media (min-width: 320px) and (max-width: 359px) {
+    .penalty-action,
+    .penalty-reset {
+        font-size: 13px;
+        line-height: 1.2;
     }
 }
