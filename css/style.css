@@ -3045,7 +3045,7 @@ footer {
 }
 
 .roulette-wheel-ring.is-idle {
-    animation: roulette-wheel-idle-spin 40s linear infinite;
+    animation: roulette-wheel-idle-spin 60s linear infinite;
 }
 
 .roulette-wheel-number {
@@ -3068,7 +3068,7 @@ footer {
 }
 
 .roulette-wheel-ring.is-idle .roulette-wheel-number-label {
-    animation: roulette-label-counter-spin 40s linear infinite;
+    animation: roulette-label-counter-spin 60s linear infinite;
 }
 
 .roulette-ball-track {
@@ -4359,6 +4359,42 @@ footer {
     margin-top: 24px;
 }
 
+.about-insights {
+    width: min(100% - 48px, 1120px);
+    margin: 0 auto;
+    padding: 64px 0 12px;
+    box-sizing: border-box;
+}
+
+.about-questions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    margin-top: 32px;
+}
+
+.about-question {
+    padding: 24px 22px 22px;
+    background: #fffdf9;
+    border: 1px solid #f0d9b8;
+    border-top: 4px solid #f2c94c;
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(50, 24, 32, 0.06);
+}
+
+.about-question h3 {
+    margin: 0 0 10px;
+    color: #4d0919;
+    font-size: 1.15rem;
+    line-height: 1.3;
+}
+
+.about-question p {
+    margin: 0;
+    color: #4b2d34;
+    line-height: 1.7;
+}
+
 .about-team {
     width: min(100% - 48px, 1120px);
     margin: 0 auto;
@@ -5154,6 +5190,25 @@ body.cart-open {
     gap: 20px;
 }
 
+.penalty-scene {
+    display: grid;
+    min-width: 0;
+    gap: 12px;
+    align-content: start;
+}
+
+.penalty-player-pickers {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+@media (max-width: 479px) {
+    .penalty-player-pickers {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 @media (max-width: 900px) {
     .penalty-play-area {
         grid-template-columns: minmax(0, 1fr);
@@ -5169,8 +5224,8 @@ body.cart-open {
     isolation: isolate;
     box-sizing: border-box;
     background:
-        radial-gradient(ellipse at 50% 7%, #fff2, transparent 46%),
-        linear-gradient(180deg, #142d32 0, #20503f 56%, #287348 100%);
+        repeating-linear-gradient(90deg, transparent 0 70px, #dcebd009 70px 140px),
+        linear-gradient(180deg, #111b22 0 9%, #3b4746 9% 12%, #172a26 12% 23%, #173c2c 23% 34%, #1d5a39 58%, #287348 100%);
     border: 1px solid #27624a;
     border-radius: 18px;
     box-shadow: inset 0 -18px 35px #0e392a66, 0 10px 24px #123b2730;
@@ -5186,6 +5241,19 @@ body.cart-open {
     content: "";
 }
 
+.penalty-pitch::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 66px;
+    background:
+        repeating-linear-gradient(90deg, transparent 0 8px, #d7ddcb18 8px 10px),
+        linear-gradient(180deg, #0b141a, #3a4541 58%, #172a24);
+    border-bottom: 1px solid #e8efdf1c;
+    content: "";
+}
+
 .penalty-goal {
     position: absolute;
     top: 30px;
@@ -5194,12 +5262,12 @@ body.cart-open {
     height: 230px;
     overflow: hidden;
     background:
-        linear-gradient(180deg, #ffffff08, #ffffff18),
+        linear-gradient(180deg, #12232155, #dce8df18),
         #dce8df12;
     border: 9px solid #fdfcf5;
     border-top-width: 11px;
     border-radius: 6px 6px 2px 2px;
-    box-shadow: 0 12px 26px #071a1755, inset 0 0 26px #fff3;
+    box-shadow: 0 12px 26px #071a1755, inset 0 0 26px #fff3, inset 0 -12px 18px #091c194d;
     transform: translateX(-50%);
     cursor: crosshair;
     touch-action: none;
@@ -5219,11 +5287,13 @@ body.cart-open {
     inset: 0;
     pointer-events: none;
     background:
+        linear-gradient(180deg, #101c1a55, #dce8df14 45%, #101c1a35),
         repeating-linear-gradient(90deg, transparent 0 28px, #ffffff52 28px 30px),
         repeating-linear-gradient(0deg, transparent 0 24px, #ffffff52 24px 26px);
 }
 
 .penalty-keeper {
+    --keeper-depth-scale: 1;
     position: absolute;
     left: 50%;
     top: 48%;
@@ -5231,9 +5301,10 @@ body.cart-open {
     width: 94px;
     height: 150px;
     pointer-events: none;
-    transform: translate(-50%, -50%) rotate(0) scale(calc(var(--keeper-size, 1) * 1.25));
+    transform: translate(-50%, -50%) rotate(var(--keeper-lean, 0deg)) scale(calc(var(--keeper-size, 1) * var(--keeper-depth-scale, 1) * 1.1));
     transform-origin: center 70%;
     transition: left 320ms cubic-bezier(.2,.8,.2,1), top 320ms cubic-bezier(.2,.8,.2,1), transform 320ms ease;
+    filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .22));
 }
 
 .penalty-keeper[data-keeper="neuer"] {
@@ -5252,6 +5323,24 @@ body.cart-open {
     --keeper-kit: #d72d3d;
     --keeper-kit-shadow: #922332;
     --keeper-size: 1;
+}
+
+.penalty-keeper::before {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    z-index: 0;
+    width: 76px;
+    height: 13px;
+    background: radial-gradient(ellipse, #07150eb3, #07150e00 72%);
+    content: "";
+    transform: translateX(-50%);
+    transition: opacity 300ms ease, transform 300ms ease;
+}
+
+.penalty-keeper.is-diving::before {
+    opacity: .7;
+    transform: translateX(-50%) scaleX(1.35);
 }
 
 .keeper-head {
@@ -5298,10 +5387,10 @@ body.cart-open {
     background:
         linear-gradient(90deg, transparent 0 11%, #ffffff35 11% 15%, transparent 15% 85%, #ffffff35 85% 89%, transparent 89%),
         linear-gradient(180deg, var(--keeper-kit), var(--keeper-kit-shadow));
-    border: 2px solid #f3eadc;
+    border: 1px solid #171c1b66;
     border-radius: 13px 13px 7px 7px;
     box-shadow: inset 0 -8px 0 #00000012;
-    transform: translateX(-50%);
+    transform: translateX(-50%) rotate(var(--keeper-lean, 0deg));
 }
 
 .keeper-arm,
@@ -5310,9 +5399,10 @@ body.cart-open {
     display: block;
     width: 14px;
     background: var(--keeper-kit);
-    border: 2px solid #f3eadc;
+    border: 1px solid #171c1b66;
     border-radius: 999px;
     transform-origin: center top;
+    transition: transform 300ms cubic-bezier(.2,.8,.2,1);
 }
 
 .keeper-arm::after {
@@ -5347,7 +5437,7 @@ body.cart-open {
     width: 18px;
     height: 54px;
     background: linear-gradient(180deg, #283c61, #182840);
-    border-color: #d7d9d4;
+    border-color: #151d2b88;
 }
 
 .keeper-leg-left {
@@ -5381,8 +5471,8 @@ body.cart-open {
     overflow: hidden;
     background:
         radial-gradient(circle at 34% 27%, #fff 0 11%, transparent 12%),
-        radial-gradient(circle at 35% 30%, #ffffff 0, #e5e8e4 54%, #9da69f 100%);
-    border: 2px solid #f5f4ec;
+        radial-gradient(circle at 35% 30%, #fff 0, #f1f3eb 55%, #cbd4ce 100%);
+    border: 2px solid #f6f7ed;
     border-radius: 50%;
     box-shadow: 0 5px 9px #0c211a88, inset -3px -4px 5px #15251c55;
     pointer-events: none;
@@ -5393,30 +5483,33 @@ body.cart-open {
 .ball-panel {
     position: absolute;
     display: block;
-    background: #1d2730;
-    border: 1px solid #f2a640;
+    background: #1379b9;
+    border: 1px solid #f6f6eb;
     filter: drop-shadow(0 1px 1px #0008);
 }
 
 .ball-panel-one {
     inset: 12% 35% 58%;
     clip-path: polygon(50% 0, 100% 34%, 82% 100%, 18% 100%, 0 34%);
+    background: linear-gradient(135deg, #006ba8, #16b6c4 58%, #e8f4ec);
 }
 
 .ball-panel-two {
     inset: 46% 8% 8% 48%;
     clip-path: polygon(0 0, 58% 10%, 100% 50%, 78% 100%, 18% 84%);
+    background: linear-gradient(145deg, #e42d45, #ff6a46 62%, #f5d477);
 }
 
 .ball-panel-three {
     inset: 43% 51% 9% 7%;
     clip-path: polygon(44% 0, 100% 10%, 82% 72%, 38% 100%, 0 53%);
+    background: linear-gradient(145deg, #00a66b, #30c6a0 60%, #e6edba);
 }
 
 .ball-seam {
     position: absolute;
     inset: 5px;
-    border: 1px solid #47515a;
+    border: 1px solid #5b6868;
     border-radius: 50%;
     transform: rotate(-24deg) scaleX(.86);
 }
@@ -5445,6 +5538,18 @@ body.cart-open {
     pointer-events: none;
     transform-origin: 50% 90%;
     transition: transform 220ms ease;
+}
+
+.penalty-shooter::before {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    z-index: 0;
+    width: 68px;
+    height: 14px;
+    background: radial-gradient(ellipse, #07150eb3, #07150e00 72%);
+    content: "";
+    transform: translateX(-50%);
 }
 
 .shooter-head,
@@ -5654,12 +5759,27 @@ body.cart-open {
     animation: penalty-shooter-kick 560ms cubic-bezier(.2,.8,.2,1) both;
 }
 
-.penalty-shooter.is-shooting .shooter-leg-right {
+.penalty-shooter.is-shooting:not([data-player="lamine"]):not([data-player="messi"]) .shooter-leg-right {
     transform: rotate(-58deg);
 }
 
-.penalty-shooter.is-shooting .shooter-leg-left {
+.penalty-shooter.is-shooting:not([data-player="lamine"]):not([data-player="messi"]) .shooter-leg-left {
     transform: rotate(17deg);
+}
+
+.penalty-shooter.is-shooting[data-player="lamine"] .shooter-leg-left,
+.penalty-shooter.is-shooting[data-player="messi"] .shooter-leg-left {
+    transform: rotate(58deg);
+}
+
+.penalty-shooter.is-shooting[data-player="lamine"] .shooter-leg-right,
+.penalty-shooter.is-shooting[data-player="messi"] .shooter-leg-right {
+    transform: rotate(-17deg);
+}
+
+.penalty-shooter.is-shooting[data-player="lamine"],
+.penalty-shooter.is-shooting[data-player="messi"] {
+    animation-name: penalty-shooter-kick-left;
 }
 
 .penalty-pitch.is-kicking .penalty-ball {
@@ -5677,10 +5797,23 @@ body.cart-open {
     100% { transform: translateX(12px) rotate(-4deg); }
 }
 
+@keyframes penalty-shooter-kick-left {
+    0% { transform: translateX(0) rotate(0); }
+    28% { transform: translateX(-7px) rotate(-4deg); }
+    58% { transform: translateX(-20px) rotate(8deg); }
+    100% { transform: translateX(-12px) rotate(4deg); }
+}
+
 @keyframes penalty-ball-kick {
-    0% { filter: brightness(1); }
+    0% {
+        filter: brightness(1);
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    }
     22% { filter: brightness(1.7); }
-    100% { filter: brightness(1); }
+    100% {
+        filter: brightness(1);
+        transform: var(--ball-flight-end-transform, translate(-50%, -50%) scale(.82) rotate(220deg));
+    }
 }
 
 @keyframes penalty-spot-flash {
@@ -5736,12 +5869,6 @@ body.cart-open {
     cursor: not-allowed;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .penalty-goal {
-        cursor: default;
-    }
-}
-
 .penalty-aim-hint {
     position: absolute;
     top: 294px;
@@ -5770,6 +5897,10 @@ body.cart-open {
     transition: left 120ms ease, top 120ms ease;
 }
 
+.penalty-pitch:not(.is-aiming) .penalty-aim-marker {
+    opacity: 0;
+}
+
 .penalty-aim-marker::before,
 .penalty-aim-marker::after {
     position: absolute;
@@ -5792,27 +5923,50 @@ body.cart-open {
 }
 
 .penalty-pitch.is-goal .penalty-ball {
-    transform: translate(-50%, -50%) scale(.82) rotate(220deg);
+    transform: translate(-50%, -50%) scale(var(--ball-flight-scale, .82)) rotate(220deg);
 }
 
 .penalty-pitch.is-saved .penalty-ball,
 .penalty-pitch.is-blocked .penalty-ball {
-    transform: translate(-50%, -50%) scale(.9) rotate(-90deg);
+    transform: translate(-50%, -50%) scale(var(--ball-flight-scale, .82)) rotate(-90deg);
 }
 
 .penalty-pitch.is-missed .penalty-ball {
-    transform: translate(-50%, -50%) rotate(110deg) scale(.8);
+    transform: translate(-50%, -50%) rotate(110deg) scale(var(--ball-flight-scale, .82));
 }
 
 .penalty-keeper.is-diving {
-    transform: translate(-50%, -50%) rotate(var(--keeper-dive-angle, 90deg)) scale(calc(var(--keeper-size, 1) * 1.3));
+    transform: translate(-50%, -50%) rotate(var(--keeper-dive-angle, 0deg)) scale(calc(var(--keeper-size, 1) * var(--keeper-depth-scale, 1) * 0.94));
+}
+
+.penalty-keeper.is-diving-left .keeper-arm-left {
+    transform: rotate(88deg);
+}
+
+.penalty-keeper.is-diving-left .keeper-arm-right {
+    transform: rotate(-22deg);
+}
+
+.penalty-keeper.is-diving-right .keeper-arm-left {
+    transform: rotate(22deg);
+}
+
+.penalty-keeper.is-diving-right .keeper-arm-right {
+    transform: rotate(-88deg);
+}
+
+.penalty-keeper.is-diving-left .keeper-leg-left {
+    transform: rotate(24deg);
+}
+
+.penalty-keeper.is-diving-right .keeper-leg-right {
+    transform: rotate(-24deg);
 }
 
 @media (min-width: 701px) {
     .penalty-controls {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         grid-template-areas:
-            "shooter keeper"
             "bet phase"
             "bet direction"
             "progress power"
@@ -5820,8 +5974,6 @@ body.cart-open {
         align-content: start;
     }
 
-    .penalty-shooter-picker { grid-area: shooter; }
-    .penalty-keeper-picker { grid-area: keeper; }
     .penalty-controls > .penalty-bet-card { grid-area: bet; }
     .penalty-controls > .penalty-phase { grid-area: phase; }
     .penalty-controls > .penalty-direction-controls { grid-area: direction; }
@@ -6419,6 +6571,11 @@ body.cart-open {
         animation-name: penalty-shooter-kick-mobile;
     }
 
+    .penalty-shooter.is-shooting[data-player="lamine"],
+    .penalty-shooter.is-shooting[data-player="messi"] {
+        animation-name: penalty-shooter-kick-left-mobile;
+    }
+
     @keyframes penalty-shooter-kick-mobile {
         0% { transform: scale(.9) translateX(0) rotate(0); }
         28% { transform: scale(.9) translateX(6px) rotate(4deg); }
@@ -6426,12 +6583,19 @@ body.cart-open {
         100% { transform: scale(.9) translateX(10px) rotate(-4deg); }
     }
 
+    @keyframes penalty-shooter-kick-left-mobile {
+        0% { transform: scale(.9) translateX(0) rotate(0); }
+        28% { transform: scale(.9) translateX(-6px) rotate(-4deg); }
+        58% { transform: scale(.9) translateX(-16px) rotate(8deg); }
+        100% { transform: scale(.9) translateX(-10px) rotate(4deg); }
+    }
+
     .penalty-keeper {
-        transform: translate(-50%, -50%) rotate(0) scale(calc(var(--keeper-size, 1) * 1.05));
+        transform: translate(-50%, -50%) rotate(0) scale(calc(var(--keeper-size, 1) * var(--keeper-depth-scale, 1) * 1.05));
     }
 
     .penalty-keeper.is-diving {
-        transform: translate(-50%, -50%) rotate(var(--keeper-dive-angle, 90deg)) scale(calc(var(--keeper-size, 1) * 1.12));
+        transform: translate(-50%, -50%) rotate(var(--keeper-dive-angle, 0deg)) scale(calc(var(--keeper-size, 1) * var(--keeper-depth-scale, 1) * 0.96));
     }
 
     .penalty-scoreboard {
@@ -6537,12 +6701,10 @@ body.cart-open {
             "pitch pitch"
             "bet bet"
             "progress power"
-            "action reset"
-            "shooter shooter"
-            "keeper keeper";
+            "action reset";
     }
 
-    .penalty-pitch {
+    .penalty-scene {
         grid-area: pitch;
     }
 
@@ -6550,8 +6712,6 @@ body.cart-open {
         display: contents;
     }
 
-    .penalty-shooter-picker { grid-area: shooter; }
-    .penalty-keeper-picker { grid-area: keeper; }
     .penalty-controls > .penalty-bet-card { grid-area: bet; }
     .penalty-controls > .penalty-phase { grid-area: phase; }
     .penalty-controls > .penalty-direction-controls { grid-area: direction; }
@@ -6577,8 +6737,7 @@ body.cart-open {
             "pitch pitch"
             "bet bet"
             "progress power"
-            "action reset"
-            "shooter keeper";
+            "action reset";
     }
 
     .penalty-shooter-picker,

@@ -1566,13 +1566,31 @@ function iniciarRuleta() {
         return obtenerAnguloTransformacion(aroRuleta, anguloActualRueda);
     }
 
+    function iniciarGiroLentoRueda() {
+        aroRuleta.classList.remove("is-idle");
+        aroRuleta.style.setProperty("--wheel-idle-start", obtenerAnguloRueda() + "deg");
+        etiquetasRueda.forEach(function(etiqueta) {
+            etiqueta.style.setProperty("--wheel-idle-counter-start",
+                obtenerAnguloTransformacion(etiqueta, 0) + "deg");
+        });
+        void aroRuleta.offsetWidth;
+        aroRuleta.classList.add("is-idle");
+    }
+
     function colocarRueda(numero) {
         anguloActualRueda = anguloFijoRueda(numero);
         aroRuleta.classList.remove("is-idle");
         aroRuleta.style.transition = "none";
         aroRuleta.style.transform = "rotate(" + anguloActualRueda + "deg)";
+        etiquetasRueda.forEach(function(etiqueta) {
+            etiqueta.style.transition = "none";
+            etiqueta.style.transform = "rotate(" + -anguloActualRueda + "deg)";
+        });
         void aroRuleta.offsetWidth;
         aroRuleta.style.removeProperty("transition");
+        etiquetasRueda.forEach(function(etiqueta) {
+            etiqueta.style.removeProperty("transition");
+        });
     }
 
     function finalizarGiroRuleta(giro, recuperado) {
@@ -1645,6 +1663,7 @@ function iniciarRuleta() {
         actualizarApuestas();
         actualizarSaldo();
         cancelarCuentaAtras();
+        iniciarGiroLentoRueda();
     }
 
     function totalApostado() {
@@ -1895,9 +1914,8 @@ function iniciarRuleta() {
             actualizarHistorialRuleta(claveHistorialPersonal, listaHistorialUsuario, contadorHistorialUsuario, true);
         }
     });
-    aroRuleta.style.setProperty("--wheel-idle-start", anguloActualRueda + "deg");
-    aroRuleta.style.setProperty("--wheel-idle-counter-start", -anguloActualRueda + "deg");
-    aroRuleta.classList.add("is-idle");
+    aroRuleta.classList.remove("is-idle");
+    aroRuleta.style.transform = "rotate(0deg)";
     ajustarRadioRueda();
     window.addEventListener("resize", ajustarRadioRueda);
     if (!obtenerCuentaSesion()) {
@@ -1975,9 +1993,6 @@ function iniciarRuleta() {
 
     function iniciarCuentaAtras() {
         if (temporizadorApuesta !== null || girando || apuestasPendientes.length === 0) return;
-        aroRuleta.style.setProperty("--wheel-idle-start", anguloActualRueda + "deg");
-        aroRuleta.style.setProperty("--wheel-idle-counter-start", -anguloActualRueda + "deg");
-        aroRuleta.classList.add("is-idle");
         pistaPelota.classList.remove("is-revealed", "is-spinning", "is-landed");
         resultadoElemento.textContent = "?";
         finCuentaAtras = Date.now() + 20000;
@@ -2129,32 +2144,23 @@ function iniciarRuleta() {
             cancelarCuentaAtras();
             return;
         }
-        let gradosPorCasilla = 360 / ordenRuleta.length;
-        let resultado = Math.floor(Math.random() * ordenRuleta.length);
-        let anguloCentroResultado = resultado * gradosPorCasilla + gradosPorCasilla / 2;
-        let anguloInicioRueda = obtenerAnguloRueda();
-        let angulosInicioEtiquetas = etiquetasRueda.map(function(etiqueta) {
-            return obtenerAnguloTransformacion(etiqueta, 0);
-        });
-        let anguloInicioPelota = Math.floor(Math.random() * 360);
-        let vueltasRueda = 5 + Math.floor(Math.random() * 3);
         let vueltasBola = 3 + Math.floor(Math.random() * 3);
         let duracionGiroPelota = 12000 + Math.floor(Math.random() * 3000);
-        let faseActual = ((anguloInicioRueda % 360) + 360) % 360;
-        let distanciaHastaResultado = ((360 - anguloCentroResultado - faseActual) % 360 + 360) % 360;
-        let anguloFinalRueda = anguloInicioRueda + vueltasRueda * 360 + distanciaHastaResultado;
-        let anguloFinalPelota = vueltasBola * 360;
+        let gradosPorCasilla = 360 / ordenRuleta.length;
+        let resultado = Math.floor(Math.random() * ordenRuleta.length);
         let giroGuardado = {
             numero: ordenRuleta[resultado],
             apuestas: apuestasDelGiro,
             cantidadApuesta
         };
         if (!guardarGiroRuleta(giroGuardado)) {
+            iniciarGiroLentoRueda();
             mostrarMensaje("No se pudo guardar el giro. La apuesta sigue preparada y no se descontó saldo.", "loss");
             return;
         }
         if (!borrarApuestasPendientesGuardadas()) {
             borrarGiroRuleta();
+            iniciarGiroLentoRueda();
             mostrarMensaje("No se pudo asegurar el giro. La apuesta sigue preparada y no se descontó saldo.", "loss");
             return;
         }
@@ -2165,9 +2171,15 @@ function iniciarRuleta() {
             actualizarApuestas();
             actualizarSaldo();
             cancelarCuentaAtras();
+            iniciarGiroLentoRueda();
             return;
         }
 
+        let anguloActual = obtenerAnguloRueda();
+        let anguloCentroResultado = resultado * gradosPorCasilla + gradosPorCasilla / 2;
+        let anguloFinalPelota = anguloActual + duracionGiroPelota / 60000 * 360 +
+            anguloCentroResultado;
+        let anguloInicioPelota = anguloFinalPelota - vueltasBola * 360;
         girando = true;
         cambiarEstadoControles(true);
         resultadoElemento.textContent = "?";
@@ -2176,27 +2188,6 @@ function iniciarRuleta() {
         pistaPelota.style.setProperty("--ball-end-angle", anguloFinalPelota + "deg");
         pistaPelota.style.setProperty("--ball-duration", duracionGiroPelota + "ms");
         pistaPelota.style.transform = "rotate(" + anguloInicioPelota + "deg)";
-        anguloActualRueda = anguloInicioRueda;
-        aroRuleta.style.transition = "none";
-        aroRuleta.style.transform = "rotate(" + anguloInicioRueda + "deg)";
-        etiquetasRueda.forEach(function(etiqueta, indice) {
-            etiqueta.style.transition = "none";
-            etiqueta.style.transform = "rotate(" + angulosInicioEtiquetas[indice] + "deg)";
-        });
-        aroRuleta.classList.remove("is-idle");
-        void aroRuleta.offsetWidth;
-        aroRuleta.style.removeProperty("transition");
-        etiquetasRueda.forEach(function(etiqueta) {
-            etiqueta.style.removeProperty("transition");
-        });
-        aroRuleta.style.setProperty("--wheel-duration", duracionGiroPelota + "ms");
-        void rueda.offsetWidth;
-        anguloActualRueda = anguloFinalRueda;
-        aroRuleta.style.transform = "rotate(" + anguloFinalRueda + "deg)";
-        etiquetasRueda.forEach(function(etiqueta, indice) {
-            etiqueta.style.transform = "rotate(" +
-                (angulosInicioEtiquetas[indice] - (anguloFinalRueda - anguloInicioRueda)) + "deg)";
-        });
         pistaPelota.classList.add("is-revealed", "is-spinning");
         reproducirSonidoGiro(duracionGiroPelota);
         mensaje.classList.remove("is-win", "is-loss");
@@ -2211,6 +2202,7 @@ function iniciarRuleta() {
 
     actualizarSeleccion();
     actualizarSaldo();
+    iniciarGiroLentoRueda();
     let giroRecuperado = leerGiroRuleta();
     if (giroRecuperado) {
         apuestasPendientes = [];
@@ -2509,8 +2501,6 @@ function iniciarJuegoPenales() {
     let tandaTerminada = false;
     let tandaIniciada = false;
     let resolviendoTiro = false;
-    let temporizadorAccionAutomatica = null;
-    let segundosAccionAutomatica = 0;
     let potencia = 0;
     let intervaloPotencia = null;
     let cargandoPotencia = false;
@@ -2551,18 +2541,27 @@ function iniciarJuegoPenales() {
         let alturaArco = Math.max(1, arco.clientHeight);
         let alturaArquero = arquero.offsetHeight;
         let mitadArquero = alturaArquero / 2;
-        let alturaDeseada = lanzandose
-            ? alturaArco * .78
-            : punto.y / 100 * alturaArco;
+        let alturaDeseada = lanzandose ? punto.y / 100 * alturaArco : alturaArco * 0.82;
         let centroVertical = limitar(
             alturaDeseada,
             mitadArquero,
             Math.max(mitadArquero, alturaArco - mitadArquero)
         );
+        let inclinacion = (punto.x - 50) * 0.28;
+        let escalaProfundidad = 0.92 + centroVertical / alturaArco * 0.16;
         arquero.style.left = limitar(punto.x, 15, 85) + "%";
         arquero.style.top = centroVertical / alturaArco * 100 + "%";
-        arquero.style.setProperty("--keeper-dive-angle", punto.x < 42 ? "-90deg" : "90deg");
+        arquero.style.setProperty("--keeper-depth-scale", escalaProfundidad.toFixed(3));
+        arquero.style.setProperty("--keeper-dive-angle", punto.x < 42 ? "-16deg" : punto.x > 58 ? "16deg" : "0deg");
+        arquero.style.setProperty("--keeper-lean", inclinacion + "deg");
         arquero.classList.toggle("is-diving", Boolean(lanzandose));
+        arquero.classList.toggle("is-diving-left", Boolean(lanzandose && punto.x < 50));
+        arquero.classList.toggle("is-diving-right", Boolean(lanzandose && punto.x > 50));
+    }
+
+    function actualizarPosicionPateador() {
+        let esZurdo = pateador.dataset.player === "lamine" || pateador.dataset.player === "messi";
+        pateador.style.left = esZurdo ? "calc(50% + 26px)" : "calc(50% - 104px)";
     }
 
     function colocarBalonEnArco(punto) {
@@ -2570,6 +2569,8 @@ function iniciarJuegoPenales() {
         let rectCancha = cancha.getBoundingClientRect();
         let x = rectArco.left - rectCancha.left + rectArco.width * punto.x / 100;
         let y = rectArco.top - rectCancha.top + rectArco.height * punto.y / 100;
+        let escalaProfundidad = 0.48 + punto.y / 100 * 0.42;
+        pelota.style.setProperty("--ball-flight-scale", escalaProfundidad.toFixed(3));
         pelota.style.left = (x / rectCancha.width * 100) + "%";
         pelota.style.top = (y / rectCancha.height * 100) + "%";
     }
@@ -2596,6 +2597,7 @@ function iniciarJuegoPenales() {
 
     colocarObjetivo(50, 48);
     colocarArquero({ x: 50, y: 48 }, false);
+    actualizarPosicionPateador();
     pelota.style.left = "50%";
     pelota.style.top = "94%";
 
@@ -2679,7 +2681,7 @@ function iniciarJuegoPenales() {
         marcadorAtajadas.textContent = String(atajadas);
         marcadorTiro.textContent = tandaTerminada
             ? "Tanda terminada"
-            : "Penal " + (tirosRealizados + 1) + " de 3";
+            : "Penal " + (tirosRealizados + 1) + " de 1";
     }
 
     function actualizarSeleccion() {
@@ -2688,7 +2690,7 @@ function iniciarJuegoPenales() {
             : "Te lanzarás " + describirPunto(puntoElegido) + ".";
         let instruccionArco = window.matchMedia("(hover: none), (pointer: coarse)").matches
             ? " Toca otro lugar del arco para cambiarlo."
-            : " Usa los controles de flecha para cambiarlo.";
+            : " Haz clic en otro punto del arco o usa las flechas para cambiarlo.";
         arco.setAttribute("aria-label", seleccion + instruccionArco);
     }
 
@@ -2697,39 +2699,14 @@ function iniciarJuegoPenales() {
         cancha.dataset.phase = fase;
         cancha.classList.remove("is-kicking");
         pateador.classList.remove("is-shooting");
+        pelota.style.removeProperty("--ball-flight-end-transform");
+        pelota.style.removeProperty("--ball-flight-scale");
+        pelota.style.transition = "none";
+        pelota.style.left = "50%";
+        pelota.style.top = "94%";
+        void pelota.offsetWidth;
+        pelota.style.removeProperty("transition");
         actualizarPotencia(0);
-    }
-
-    function cancelarAccionAutomatica() {
-        if (temporizadorAccionAutomatica !== null) {
-            window.clearInterval(temporizadorAccionAutomatica);
-            temporizadorAccionAutomatica = null;
-        }
-        segundosAccionAutomatica = 0;
-    }
-
-    function programarAccionAutomatica() {
-        cancelarAccionAutomatica();
-        segundosAccionAutomatica = 3;
-        avance.textContent = "El tiro se resolverá en 3 segundos. Puedes cambiar la dirección para reiniciar el conteo.";
-        temporizadorAccionAutomatica = window.setInterval(function() {
-            segundosAccionAutomatica--;
-            if (segundosAccionAutomatica > 0) {
-                avance.textContent = "El tiro se resolverá en " + segundosAccionAutomatica +
-                    " segundos. Puedes cambiar la dirección para reiniciar el conteo.";
-                actualizarEstado();
-                return;
-            }
-            cancelarAccionAutomatica();
-            let cuenta = cuentaActual();
-            let importe = cuenta ? leerApuesta(cuenta) : null;
-            if (cuenta && importe !== null) {
-                finalizarAccion(puntoElegido, fase === "kick" ? Math.max(potencia, 65) : 0, importe);
-            } else {
-                actualizarEstado();
-            }
-        }, 1000);
-        actualizarEstado();
     }
 
     function actualizarEstado() {
@@ -2743,6 +2720,7 @@ function iniciarJuegoPenales() {
             apuestaFeedback.textContent = "Llegaste al límite de puntos; termina esta tanda sin nuevas apuestas.";
         }
         cancha.dataset.phase = fase;
+        cancha.classList.toggle("is-aiming", Boolean(cuenta && !tandaTerminada && !resolviendoTiro));
         if (saldo) saldo.textContent = cuenta
             ? puntosCuenta(cuenta).toLocaleString("es-CL")
             : "Inicia sesión";
@@ -2761,10 +2739,8 @@ function iniciarJuegoPenales() {
         });
         reiniciar.disabled = !cuenta || !tandaTerminada || Boolean(limiteAlcanzado);
         botonAccion.disabled = !cuenta || bloqueoPorLimite || tandaTerminada || resolviendoTiro ||
-            importeApuesta === null || temporizadorAccionAutomatica !== null;
-        let textoAccion = temporizadorAccionAutomatica !== null
-            ? "Tiro en " + segundosAccionAutomatica + " s"
-            : !cuenta
+            importeApuesta === null;
+        let textoAccion = !cuenta
             ? "Inicia sesión"
             : bloqueoPorLimite
                 ? "Límite alcanzado"
@@ -2774,9 +2750,7 @@ function iniciarJuegoPenales() {
                         ? (cargandoPotencia ? "Suelta para patear" : "Mantén para cargar potencia")
                         : "Atajar en el punto elegido";
         botonAccion.textContent = textoAccion;
-        botonAccion.setAttribute("aria-label", temporizadorAccionAutomatica !== null
-            ? "Tiro automático en " + segundosAccionAutomatica + " segundos"
-            : !cuenta
+        botonAccion.setAttribute("aria-label", !cuenta
             ? "Inicia sesión para comenzar una tanda de penales"
             : bloqueoPorLimite
                 ? "Alcanzaste el límite de puntos para jugar"
@@ -2786,18 +2760,15 @@ function iniciarJuegoPenales() {
                         ? "Mantén presionado y suelta para patear con la potencia elegida"
                         : "Lanzarte al punto elegido para intentar atajar");
         controlPotencia.hidden = fase !== "kick";
-        actualizarPotencia(temporizadorAccionAutomatica !== null && fase === "kick" ? 65 : 0);
+        actualizarPotencia(cargandoPotencia && fase === "kick" ? potencia : 0);
         let puedeTocarArco = window.matchMedia("(hover: none), (pointer: coarse)").matches;
         faseTexto.textContent = tandaTerminada
-            ? "Tanda completa: revisa tus tres tiros y tus tres atajadas."
-            : temporizadorAccionAutomatica !== null
-                ? "Prepárate: el " + (fase === "kick" ? "penal" : "tiro del rival") +
-                    " se realizará en " + segundosAccionAutomatica + " segundos."
+            ? "Tanda completa: revisa tu penal y tu atajada."
             : fase === "kick"
-                ? (puedeTocarArco ? "Elige dónde patear tocando una flecha o el arco; el penal se resuelve automáticamente en 3 segundos."
-                    : "Elige izquierda, centro o derecha; el penal se resuelve automáticamente en 3 segundos.")
-                : (puedeTocarArco ? "Elige dónde atajar tocando una flecha o el arco; el rival tira en 3 segundos."
-                    : "Elige izquierda, centro o derecha; el rival tira automáticamente en 3 segundos.");
+                ? (puedeTocarArco ? "Apunta tocando el arco; mantén el botón para cargar y suéltalo para patear."
+                    : "Haz clic en el arco o usa las flechas; mantén el botón para cargar y suéltalo para patear.")
+                : (puedeTocarArco ? "Toca el arco para elegir dónde lanzarte y pulsa «Atajar» para confirmar."
+                    : "Haz clic en el arco o usa las flechas para elegir dónde lanzarte; pulsa «Atajar» para confirmar.");
         actualizarSeleccion();
         actualizarMarcador();
         actualizarAvisoLimiteJuegos(cuenta);
@@ -2818,7 +2789,7 @@ function iniciarJuegoPenales() {
             actualizarEstado();
             return;
         }
-        if (tandaTerminada || resolviendoTiro || tirosRealizados >= 3) return;
+        if (tandaTerminada || resolviendoTiro || tirosRealizados >= 1) return;
         if (importeApuesta === undefined) importeApuesta = leerApuesta(cuenta);
         if (!Number.isSafeInteger(importeApuesta) || importeApuesta < 0 ||
             importeApuesta > puntosCuenta(cuenta) || importeApuesta !== Number(apuestaInput.value)) {
@@ -2832,9 +2803,11 @@ function iniciarJuegoPenales() {
         if (fase === "kick") {
             pateador.classList.add("is-shooting");
             cancha.classList.add("is-kicking");
+            let desvioX = (Math.random() * 18) - 9;
+            let desvioY = (Math.random() * 18) - 9;
             let puntoArquero = {
-                x: 16 + Math.random() * 68,
-                y: 18 + Math.random() * 42
+                x: limitar(puntoSeleccionado.x + desvioX + (potenciaTiro < 55 ? 4 : -2), 18, 82),
+                y: limitar(puntoSeleccionado.y + desvioY, 12, 84)
             };
             colocarArquero(puntoArquero, true);
             colocarBalonEnArco(puntoSeleccionado);
@@ -2842,17 +2815,21 @@ function iniciarJuegoPenales() {
                 (puntoSeleccionado.x - puntoArquero.x) * arco.clientWidth / 100,
                 (puntoSeleccionado.y - puntoArquero.y) * arco.clientHeight / 100
             );
-            let alcanceArquero = 78 - potenciaTiro * .31;
+            let alcanceArquero = 94 - potenciaTiro * 0.46 + (Math.random() * 10 - 5);
             let arqueroAtajo = distancia <= alcanceArquero;
             if (!arqueroAtajo) {
+                pelota.style.setProperty("--ball-flight-end-transform",
+                    "translate(-50%, -50%) scale(var(--ball-flight-scale, .82)) rotate(220deg)");
                 cancha.classList.add("is-goal");
                 goles++;
                 marcarIndicador(indicadoresGoles, tirosRealizados, true, "Penal");
                 let resultadoApuesta = liquidarApuesta(cuenta, importeApuesta, true);
                 avance.textContent = "¡Gol! Apuntaste " + describirPunto(puntoSeleccionado) +
-                    " con " + Math.round(potenciaTiro) + "% de potencia." +
+                    " con " + Math.round(potenciaTiro) + "% de potencia y un remate muy preciso." +
                     textoResultadoApuesta(resultadoApuesta, importeApuesta, true);
             } else {
+                pelota.style.setProperty("--ball-flight-end-transform",
+                    "translate(-50%, -50%) scale(var(--ball-flight-scale, .82)) rotate(-90deg)");
                 cancha.classList.add("is-saved");
                 marcarIndicador(indicadoresGoles, tirosRealizados, false, "Penal");
                 let resultadoApuesta = liquidarApuesta(cuenta, importeApuesta, false);
@@ -2862,17 +2839,23 @@ function iniciarJuegoPenales() {
             }
             fase = "defend";
         } else {
-            let puntoRival = {
-                x: 12 + Math.random() * 76,
-                y: 12 + Math.random() * 72
-            };
+            let zonasRival = [
+                { x: 20, y: 22 }, { x: 50, y: 22 }, { x: 80, y: 22 },
+                { x: 20, y: 50 }, { x: 50, y: 50 }, { x: 80, y: 50 },
+                { x: 20, y: 78 }, { x: 50, y: 78 }, { x: 80, y: 78 }
+            ];
+            let puntoRival = zonasRival[Math.floor(Math.random() * zonasRival.length)];
+            cancha.classList.add("is-kicking");
             colocarArquero(puntoSeleccionado, true);
             colocarBalonEnArco(puntoRival);
             let distancia = Math.hypot(
                 (puntoSeleccionado.x - puntoRival.x) * arco.clientWidth / 100,
                 (puntoSeleccionado.y - puntoRival.y) * arco.clientHeight / 100
             );
-            if (distancia <= 78) {
+            let margenDefensa = 78 + (Math.random() * 12 - 6);
+            if (distancia <= margenDefensa) {
+                pelota.style.setProperty("--ball-flight-end-transform",
+                    "translate(-50%, -50%) scale(var(--ball-flight-scale, .82)) rotate(-90deg)");
                 cancha.classList.add("is-blocked");
                 atajadas++;
                 marcarIndicador(indicadoresAtajadas, tirosRealizados, true, "Atajada");
@@ -2880,6 +2863,8 @@ function iniciarJuegoPenales() {
                 avance.textContent = "¡Atajada! Te lanzaste " + describirPunto(puntoSeleccionado) + "." +
                     textoResultadoApuesta(resultadoApuesta, importeApuesta, true);
             } else {
+                pelota.style.setProperty("--ball-flight-end-transform",
+                    "translate(-50%, -50%) rotate(110deg) scale(var(--ball-flight-scale, .82))");
                 cancha.classList.add("is-missed");
                 marcarIndicador(indicadoresAtajadas, tirosRealizados, false, "Atajada");
                 let resultadoApuesta = liquidarApuesta(cuenta, importeApuesta, false);
@@ -2891,7 +2876,7 @@ function iniciarJuegoPenales() {
             fase = "kick";
         }
 
-        if (tirosRealizados === 3 && fase === "kick") {
+        if (tirosRealizados === 1 && fase === "kick") {
             tandaTerminada = true;
             faseTexto.textContent = "Tanda completa";
             avance.textContent += " Final: " + goles + " goles y " + atajadas + " atajadas.";
@@ -2973,14 +2958,12 @@ function iniciarJuegoPenales() {
     arco.addEventListener("click", function(evento) {
         if (evento.detail === 0 || !cuentaActual() || resolviendoTiro ||
             cargandoPotencia || tandaTerminada) return;
-        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
         actualizarPuntoDesdeEvento(evento);
         if (fase === "defend") colocarArquero(puntoElegido, false);
         actualizarEstado();
         avance.textContent = fase === "kick"
             ? "Apuntaste " + describirPunto(puntoElegido) + ". Mantén el botón para cargar y soltar para patear."
             : "Te lanzarás " + describirPunto(puntoElegido) + ". Pulsa Atajar para confirmar.";
-        programarAccionAutomatica();
     });
 
     arco.addEventListener("keydown", function(evento) {
@@ -3022,6 +3005,7 @@ function iniciarJuegoPenales() {
         pateador.dataset.player = jugador;
         pateador.querySelector(".shooter-name").textContent = dorsal.nombre;
         pateador.querySelector(".shooter-number").textContent = dorsal.numero;
+        actualizarPosicionPateador();
     });
 
     function elegirDireccion(direccion) {
@@ -3032,7 +3016,6 @@ function iniciarJuegoPenales() {
             ? "Apuntaste al " + (direccion === "center" ? "centro" : direccion === "left" ? "lado izquierdo" : "lado derecho") +
                 ". Mantén el botón para cargar y soltar para patear."
             : "Te lanzarás al " + (direccion === "center" ? "centro" : direccion === "left" ? "lado izquierdo" : "lado derecho") + ".";
-        programarAccionAutomatica();
     }
 
     controlesDireccion.forEach(function(control) {
@@ -3078,10 +3061,9 @@ function iniciarJuegoPenales() {
         if (!cuenta || puntosGanadosCuenta(cuenta) >= LIMITE_PUNTOS_CUENTA || !tandaTerminada || resolviendoTiro) return;
         indicadoresGoles.concat(indicadoresAtajadas).forEach(function(indicador, indice) {
             indicador.classList.remove("is-success", "is-failure");
-            let numeroTiro = indice % 3 + 1;
-            indicador.textContent = String(numeroTiro);
-            indicador.setAttribute("aria-label", (indice < 3 ? "Penal " : "Atajada ") +
-                numeroTiro + " pendiente");
+            let etiqueta = indice < indicadoresGoles.length ? "Penal" : "Atajada";
+            indicador.textContent = "1";
+            indicador.setAttribute("aria-label", etiqueta + " 1 pendiente");
         });
         tirosRealizados = 0;
         goles = 0;
@@ -3095,7 +3077,7 @@ function iniciarJuegoPenales() {
         colocarArquero({ x: 50, y: 48 }, false);
         pelota.style.left = "50%";
         pelota.style.top = "94%";
-        avance.textContent = "Empieza la tanda: cada ronda incluye un penal y una atajada.";
+        avance.textContent = "Empieza la tanda: ejecuta un penal y después intenta una atajada.";
         actualizarEstado();
     });
 
@@ -3183,7 +3165,7 @@ function iniciarChatChichaCook() {
         },
         {
             claves: ["como jugar penales", "como jugar a los penales", "como juego penales", "como se juega penales", "como se juegan los penales", "como se juega la tanda de penales", "tanda de penales", "patear", "atajar", "penal"],
-            respuesta: "En la tanda de penales elige izquierda, centro o derecha; después de cada elección tienes 3 segundos para cambiar la dirección antes de que el tiro se resuelva automáticamente contra la máquina. Puedes apostar puntos virtuales en cada tiro o jugar sin apuesta."
+            respuesta: "En la tanda de penales apunta al arco, mantén el botón para cargar potencia y suéltalo para patear. Al defender, elige dónde lanzarte y confirma con Atajar. Puedes apostar puntos virtuales o jugar sin apuesta."
         },
         {
             claves: ["como jugar blackjack", "como jugar al blackjack", "como juego blackjack", "como juego al blackjack", "como se juega blackjack", "como se juega al blackjack", "como se juega el blackjack", "reglas de blackjack", "blackjack", "21", "pedir carta", "plantarse", "doblar apuesta"],

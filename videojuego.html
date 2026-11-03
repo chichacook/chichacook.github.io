@@ -222,32 +222,29 @@
             <div>
                 <p class="game-eyebrow">RETO DE PRECISIÓN</p>
                 <h2 id="penalty-title">Tanda de penales</h2>
-                <p>Juega tres rondas: elige dónde patear y dónde atajar; tras cada elección tienes 3 segundos antes de que el tiro se resuelva contra la máquina. En celular verás primero los controles. Puedes apostar puntos virtuales si quieres.</p>
+                <p>Juega una tanda: apunta al arco, mantén el botón para cargar potencia y suéltalo para patear. Después elige dónde lanzarte y pulsa «Atajar» para confirmar. Puedes apostar puntos virtuales si quieres.</p>
             </div>
             <p class="penalty-balance">Mis puntos <strong id="penalty-points">Inicia sesión</strong></p>
         </div>
         <div class="penalty-scoreboard">
             <section class="penalty-score-group" aria-labelledby="penalty-kicks-label">
                 <h3 id="penalty-kicks-label">Tus penales <strong id="penalty-goals">0</strong></h3>
-                <ol class="penalty-indicators" id="penalty-kick-indicators" aria-label="Resultado de tus tres penales">
+                <ol class="penalty-indicators" id="penalty-kick-indicators" aria-label="Resultado de tu penal">
                     <li aria-label="Penal 1 pendiente">1</li>
-                    <li aria-label="Penal 2 pendiente">2</li>
-                    <li aria-label="Penal 3 pendiente">3</li>
                 </ol>
             </section>
             <section class="penalty-score-group" aria-labelledby="penalty-saves-label">
                 <h3 id="penalty-saves-label">Tus atajadas <strong id="penalty-saves">0</strong></h3>
-                <ol class="penalty-indicators" id="penalty-save-indicators" aria-label="Resultado de tus tres atajadas">
+                <ol class="penalty-indicators" id="penalty-save-indicators" aria-label="Resultado de tu atajada">
                     <li aria-label="Atajada 1 pendiente">1</li>
-                    <li aria-label="Atajada 2 pendiente">2</li>
-                    <li aria-label="Atajada 3 pendiente">3</li>
                 </ol>
             </section>
-            <p id="penalty-round" class="penalty-round">Tiro 1 de 3</p>
+            <p id="penalty-round" class="penalty-round">Tiro 1 de 1</p>
         </div>
         <div class="penalty-play-area">
+            <div class="penalty-scene">
             <div class="penalty-pitch" data-phase="kick">
-                <div class="penalty-goal" role="button" tabindex="0" aria-label="Elige la dirección con los controles de flecha">
+                <div class="penalty-goal" role="button" tabindex="0" aria-label="Elige la dirección haciendo clic en el arco o usando las flechas">
                     <span class="goal-net"></span>
                     <span class="penalty-keeper" data-keeper="neuer">
                         <span class="keeper-head"></span>
@@ -266,11 +263,11 @@
                     <span class="ball-panel ball-panel-three"></span>
                     <span class="ball-seam"></span>
                 </span>
-                <span class="penalty-shooter" data-player="mbappe" aria-hidden="true">
+                <span class="penalty-shooter" data-player="lamine" aria-hidden="true">
                     <span class="shooter-head"></span>
                     <span class="shooter-hair"></span>
                     <span class="shooter-body">
-                        <span class="shooter-name">MBAPPÉ</span>
+                        <span class="shooter-name">LAMINE</span>
                         <span class="shooter-number">10</span>
                     </span>
                     <span class="shooter-arm shooter-arm-left"></span>
@@ -283,12 +280,12 @@
                 <span class="penalty-spot" aria-label="Punto penal"></span>
                 <span class="penalty-aim-hint">← IZQUIERDA · CENTRO · DERECHA →</span>
             </div>
-            <div class="penalty-controls">
+            <div class="penalty-player-pickers">
                 <div class="penalty-shooter-picker">
                     <label for="penalty-shooter-select">Elige quién patea</label>
                     <select id="penalty-shooter-select" aria-describedby="penalty-shooter-note">
-                        <option value="mbappe">Mbappé · Real Madrid · 10</option>
                         <option value="lamine">Lamine Yamal · Barcelona · 10</option>
+                        <option value="mbappe">Mbappé · Real Madrid · 10</option>
                         <option value="ronaldo">Cristiano Ronaldo · Al Nassr · 7</option>
                         <option value="messi">Messi · Inter Miami · 10</option>
                     </select>
@@ -303,6 +300,9 @@
                     </select>
                     <p id="penalty-keeper-note">Colores inspirados en sus clubes; ilustraciones originales sin escudos.</p>
                 </div>
+            </div>
+            </div>
+            <div class="penalty-controls">
                 <div class="penalty-bet-card">
                     <label for="penalty-bet">Apuesta por este tiro</label>
                     <div class="penalty-bet-input">
